@@ -23,9 +23,10 @@ The child function, triggered by messages in this queue, processes each issuer i
 6. Activate your virtualenv
     - Run `source .env/bin/activate` in the terminal.
 
-7. Install the dependencies
+7. Install the dependencies 
     - Run `./build.sh` in the terminal.
     - Rerun `build.sh` whenever you edit the `child_lambda_function.py`.
+    - For more info (https://docs.aws.amazon.com/lambda/latest/dg/python-package.html)
 
 8. Deploy the Stack
     - Run `cdk deploy` in the terminal.

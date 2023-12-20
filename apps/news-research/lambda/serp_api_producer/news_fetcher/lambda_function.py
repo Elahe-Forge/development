@@ -98,7 +98,7 @@ def handler(event, context):
     issuers_table = dynamodb.Table(os.environ['ISSUERS_TABLE_NAME'])
 
 
-    # Each record is one SQS message
+    # Each record is one SQS message to parse
     for record in event['Records']: 
         message_body = json.loads(record['body']) # body is the actual content of the message that is enqueued in the parent Lambda function
         company_name = message_body['company_name']
@@ -116,7 +116,6 @@ def handler(event, context):
                 ':val': datetime.datetime.now().isoformat()
             }
         )
-
 
     return {
         'statusCode': 200,

@@ -27,7 +27,8 @@ def handler(event, context):
 
     issuer_count = 0
 
-    if path == '/run-all': # Logic for 'run-all' command
+    # Logic for 'run-all' command
+    if path == '/run-all': 
         # Enqueue all issuers
 
         # Scan the table for all issuers

@@ -24,14 +24,14 @@ The child function, triggered by messages in this queue, processes each issuer i
     - Run `source .env/bin/activate` in the terminal.
 
 7. Install the dependencies 
-    - Run `./build.sh` in the terminal.
-    - Rerun `build.sh` whenever you edit the `child_lambda_function.py`.
-    - For more info (https://docs.aws.amazon.com/lambda/latest/dg/python-package.html)
+    - Run `pip install -r requirements.txt` in the terminal.
 
-8. Deploy the Stack
+8. Make sure the Docker is up and running
+
+9. Deploy the Stack
     - Run `cdk deploy` in the terminal.
 
-9. After deployment, a `NEWSAPIEndpoint` will be returned as output. Use it to invoke the API
+10. After deployment, a `NEWSAPIEndpoint` will be returned as output. Use it to invoke the API
     - To run for all the companies available in `news-research-issuers-table`, run 
         ```
         curl -X POST https://api-gateway-url/run-all

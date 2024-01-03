@@ -9,6 +9,7 @@ from aws_cdk import (
     aws_sqs,
     aws_lambda_event_sources as lambda_event_source,
     aws_ecr_assets,
+    aws_iam
 )
 from constructs import Construct
 import os
@@ -19,12 +20,6 @@ class NewsResearchStack(Stack):
 
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
-
-        # DynamoDB table for issuers
-        issuers_table = aws_dynamodb.Table.from_table_name(
-            self, 'news-research-issuers-table',
-            table_name='news-research-issuers-table'
-        )
 
         # Single DynamoDB table for all news entries
         news_table = aws_dynamodb.Table(
@@ -54,7 +49,6 @@ class NewsResearchStack(Stack):
           runtime       = aws_lambda.Runtime.FROM_IMAGE,
           environment   = {
                 'NEWS_TABLE': news_table.table_name,
-                'ISSUERS_TABLE_NAME': issuers_table.table_name,
                 'ISSUER_QUEUE_URL': issuer_queue.queue_url
           },
           function_name = "NewsFetcherFunction",
@@ -65,7 +59,6 @@ class NewsResearchStack(Stack):
 
         # Grant the Lambda function permissions to write to the table
         news_table.grant_write_data(news_fetcher_lambda)
-        issuers_table.grant_read_write_data(news_fetcher_lambda)
         
         # Grant the Child Lambda function permissions to read from the queue
         issuer_queue.grant_consume_messages(news_fetcher_lambda)
@@ -88,21 +81,43 @@ class NewsResearchStack(Stack):
 
         news_endpoints_lambda = aws_lambda.Function(self,
           id            = "NewsEndpointsLambdaFunction",
+          description   = "NewsEndpointsLambdaFunction",
           code          = news_endpoints_ecr_image,
           handler       = aws_lambda.Handler.FROM_IMAGE,
           runtime       = aws_lambda.Runtime.FROM_IMAGE,
           environment  ={
-                'ISSUERS_TABLE_NAME': issuers_table.table_name,
-                'ISSUER_QUEUE_URL': issuer_queue.queue_url
+                'ISSUER_QUEUE_URL': issuer_queue.queue_url,
+                'ATHENA_DATABASE': 'datalake-curated-qa',
+                'ATHENA_TABLE': 'issuers',
+                'S3_OUTPUT_LOCATION': 's3://newsresearch/'
           },
-          function_name = "NewsEndpointsFunctionx",
+          function_name = "NewsEndpointsFunction",
           memory_size   = 128,
           reserved_concurrent_executions = 10,
           timeout       = Duration.seconds(60),
         )
+        
+        s3_policy = aws_iam.PolicyStatement(
+            effect=aws_iam.Effect.ALLOW,
+            actions=["s3:GetBucketLocation","s3:ListBucketMultipartUploads", "s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+            resources=["arn:aws:s3:::*"]
+        )
+        news_endpoints_lambda.add_to_role_policy(s3_policy)
+               
+        athena_policy = aws_iam.PolicyStatement(
+            effect=aws_iam.Effect.ALLOW,
+            actions=["athena:StartQueryExecution", "athena:GetQueryExecution", "athena:GetQueryResults"],
+            resources=["arn:aws:athena:*:*:*"]  
+        )
+        news_endpoints_lambda.add_to_role_policy(athena_policy)
 
-        # Grant the parent Lambda permission to read the table
-        issuers_table.grant_read_data(news_endpoints_lambda)
+        glue_policy = aws_iam.PolicyStatement(
+            effect=aws_iam.Effect.ALLOW,
+            actions=["glue:GetDatabase","glue:GetDatabases","glue:GetTable","glue:GetTables"],
+            resources=["arn:aws:glue:*:*:catalog","arn:aws:glue:*:*:database/*","arn:aws:glue:*:*:table/*/*"]
+        )
+        news_endpoints_lambda.role.add_to_policy(glue_policy)
+
 
         # Grant the Parent Lambda permission to send messages to the queue
         issuer_queue.grant_send_messages(news_endpoints_lambda)

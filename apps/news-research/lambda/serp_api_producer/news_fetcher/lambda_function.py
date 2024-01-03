@@ -95,27 +95,18 @@ def handler(event, context):
 
     dynamodb = boto3.resource('dynamodb')
     news_table = dynamodb.Table(os.environ['NEWS_TABLE'])
-    issuers_table = dynamodb.Table(os.environ['ISSUERS_TABLE_NAME'])
 
 
     # Each record is one SQS message to parse
     for record in event['Records']: 
         message_body = json.loads(record['body']) # body is the actual content of the message that is enqueued in the parent Lambda function
         company_name = message_body['company_name']
-        # last_visited = message_body['last_visited']
     
         news_results = get_google_news(company_name, serpapi_secret_key)
         logger.info(f" news_results {news_results}")
         
         store_news(news_results, news_table, company_name)
         
-        issuers_table.update_item(
-            Key={'issuer_name': company_name},
-            UpdateExpression='SET last_visited = :val',
-            ExpressionAttributeValues={
-                ':val': datetime.datetime.now().isoformat()
-            }
-        )
 
     return {
         'statusCode': 200,

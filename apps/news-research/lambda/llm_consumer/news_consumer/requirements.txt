@@ -1,2 +1,7 @@
+bs4
 boto3
 botocore
+langchain
+logging
+openai
+requests

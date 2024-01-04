@@ -7,10 +7,12 @@ Fetches and stores news for each issuer received in the message.
 import os
 import boto3
 import json
-import datetime
+from datetime import datetime, timedelta
 from serpapi import GoogleSearch
 from botocore.exceptions import ClientError
 import logging
+from dateutil.relativedelta import relativedelta
+import re
 
 # Initialize logger
 logger = logging.getLogger()
@@ -69,6 +71,45 @@ def get_google_news(issuer_name, secret):
         return []
 
 
+def convert_relative_date_to_actual(input_date: str) -> str:
+    """
+    Convert a relative date like '3 weeks ago', '13 hours ago', '2 months ago' or 'Jul 29, 2015' 
+    to an actual date in 'MM/DD/YYYY' format.
+    """
+    try:
+        current_date = datetime.now()
+        patterns = {
+            'hours': r'(\d+)\s+hours? ago',
+            'days': r'(\d+)\s+days? ago',
+            'weeks': r'(\d+)\s+weeks? ago',
+            'months': r'(\d+)\s+months? ago',
+            'years': r'(\d+)\s+years? ago'
+        }
+
+        for unit, pattern in patterns.items():
+            match = re.search(pattern, input_date, re.IGNORECASE)
+            if match:
+                amount = int(match.group(1))
+                if unit == 'hours':
+                    return (current_date - timedelta(hours=amount)).strftime("%Y/%m/%d")
+                elif unit == 'days':
+                    return (current_date - timedelta(days=amount)).strftime("%Y/%m/%d")
+                elif unit == 'weeks':
+                    return (current_date - timedelta(weeks=amount)).strftime("%Y/%m/%d")
+                elif unit == 'months':
+                    return (current_date - relativedelta(months=amount)).strftime("%Y/%m/%d")
+                elif unit == 'years':
+                    return (current_date - relativedelta(years=amount)).strftime("%Y/%m/%d")
+        
+        # If the input is similar to 'Jul 29, 2015'
+        actual_date = datetime.strptime(input_date, "%b %d, %Y") 
+        return actual_date.strftime("%Y/%m/%d")
+    
+    except Exception as e:
+            logger.error(f"Error getting actual date: {e}")
+            return None
+
+
 def store_news(news_results, table, company_name):
     """
     Store the fetched news items in the DynamoDB table.
@@ -81,7 +122,7 @@ def store_news(news_results, table, company_name):
                 'link': item.get('link'),
                 'title': item.get('title'),
                 'source': item.get('source'),
-                'date': item.get('date'),
+                'date': convert_relative_date_to_actual(item.get('date')),
                 'snippet': item.get('snippet'),
                 'thumbnail': item.get('thumbnail')
             })

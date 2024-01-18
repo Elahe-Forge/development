@@ -24,7 +24,7 @@ def get_serpapi_secret():
     Extract secret key for SerpAPI.
     """
 
-    secret_name = "news-research-data-science"
+    secret_name = "data-science-and-ml-models/serpapi_token"
     region_name = "us-west-2"
 
     # Create a Secrets Manager client

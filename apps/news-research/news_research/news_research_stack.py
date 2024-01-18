@@ -70,9 +70,8 @@ class NewsResearchStack(Stack):
         news_fetcher_lambda.add_event_source(issuers_event_source)
 
         # Grant read access to the secret manager for lambda
-        secret_manager = aws_secretsmanager.Secret.from_secret_complete_arn(self, 'news-research-data-science', 'arn:aws:secretsmanager:us-west-2:597915789054:secret:news-research-data-science-4jO5Zo' )
+        secret_manager = aws_secretsmanager.Secret.from_secret_complete_arn(self, 'data-science-and-ml-models/serpapi_token', 'arn:aws:secretsmanager:us-west-2:597915789054:secret:data-science-and-ml-models/serpapi_token-utuxE8' )
         secret_manager.grant_read(news_fetcher_lambda)
-
 
         news_endpoints_ecr_image = aws_lambda.EcrImageCode.from_asset_image(
                 directory = os.path.join(os.getcwd(), "lambda/serp_api_producer/news_endpoints"),
@@ -163,6 +162,9 @@ class NewsResearchStack(Stack):
         news_table.grant_read_data(news_consumer_lambda)
         news_table_event_source =  lambda_event_source.DynamoEventSource(news_table, starting_position= aws_lambda.StartingPosition.LATEST)
         news_consumer_lambda.add_event_source(news_table_event_source)
+
+        secret_manager = aws_secretsmanager.Secret.from_secret_complete_arn(self, 'data-science-and-ml-models/openai', 'arn:aws:secretsmanager:us-west-2:597915789054:secret:data-science-and-ml-models/openai-Sc0RKh')
+        secret_manager.grant_read(news_consumer_lambda)
 
 
     

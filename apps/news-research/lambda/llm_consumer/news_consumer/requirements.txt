@@ -2,6 +2,8 @@ bs4
 boto3
 botocore
 langchain
+langchain-openai
 logging
-openai
 requests
+pandas
+pyarrow

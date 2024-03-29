@@ -149,10 +149,6 @@ def handler(event, context):
         store_news(news_results, news_table, company_name)
         
 
-    return {
-        'statusCode': 200,
-        'body': json.dumps(f"News updated for for {company_name}")
-    }
 
 
 

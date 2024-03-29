@@ -151,17 +151,23 @@ class NewsResearchStack(Stack):
           handler       = aws_lambda.Handler.FROM_IMAGE,
           runtime       = aws_lambda.Runtime.FROM_IMAGE,
           environment   = {
-                'NEWS_TABLE': news_table.table_name,
+                'S3_BUCKET': 'data-science-news-output'
           },
           function_name = "NewsConsumerFunction",
-          memory_size   = 128,
+          memory_size   = 1024, # default 128 causes memory allocation limit error
           reserved_concurrent_executions = 10,
-          timeout       = Duration.seconds(60),
+          timeout       = Duration.seconds(300),
         )
 
         news_table.grant_read_data(news_consumer_lambda)
-        news_table_event_source =  lambda_event_source.DynamoEventSource(news_table, starting_position= aws_lambda.StartingPosition.LATEST)
+        news_table_event_source =  lambda_event_source.DynamoEventSource(
+            news_table, 
+            starting_position= aws_lambda.StartingPosition.LATEST,
+            # batch_size=100 # default is 100, max is 1000
+            )
         news_consumer_lambda.add_event_source(news_table_event_source)
+
+        news_consumer_lambda.add_to_role_policy(s3_policy)
 
         secret_manager = aws_secretsmanager.Secret.from_secret_complete_arn(self, 'data-science-and-ml-models/openai', 'arn:aws:secretsmanager:us-west-2:597915789054:secret:data-science-and-ml-models/openai-Sc0RKh')
         secret_manager.grant_read(news_consumer_lambda)

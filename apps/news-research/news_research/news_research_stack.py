@@ -23,10 +23,10 @@ class NewsResearchStack(Stack):
 
         # Single DynamoDB table for all news entries
         news_table = aws_dynamodb.Table(
-            self, 'news-table',
-            table_name='news-table',
-            sort_key=aws_dynamodb.Attribute(name='position', type=aws_dynamodb.AttributeType.NUMBER),
-            partition_key=aws_dynamodb.Attribute(name='company_name', type=aws_dynamodb.AttributeType.STRING),
+            self, 'data-science-news',
+            table_name='data-science-news',
+            partition_key=aws_dynamodb.Attribute(name='company_name_link_date', type=aws_dynamodb.AttributeType.STRING),
+            sort_key=aws_dynamodb.Attribute(name='date', type=aws_dynamodb.AttributeType.STRING),
             stream= aws_dynamodb.StreamViewType.NEW_AND_OLD_IMAGES
         )
 
@@ -57,10 +57,11 @@ class NewsResearchStack(Stack):
           timeout       = Duration.seconds(60),
         )
 
-        # Grant the Lambda function permissions to write to the table
+        # Grant the Lambda function permissions to read and write to the table
         news_table.grant_write_data(news_fetcher_lambda)
+        news_table.grant_read_data(news_fetcher_lambda)
         
-        # Grant the Child Lambda function permissions to read from the queue
+        # Grant the Lambda function permissions to read from the queue
         issuer_queue.grant_consume_messages(news_fetcher_lambda)
         
         #Create an SQS event source for Lambda
@@ -122,7 +123,7 @@ class NewsResearchStack(Stack):
         issuer_queue.grant_send_messages(news_endpoints_lambda)
 
 
-        # API Gateway to trigger the Lambda function
+        # API Gateway to trigger the Lambda function 
         api = aws_apigateway.LambdaRestApi(
             self, 'NewsApi',
             handler=news_endpoints_lambda,

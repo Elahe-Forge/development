@@ -1,0 +1,7 @@
+boto3
+nltk
+bert_score
+rouge
+sentence_transformers 
+transformers
+torch

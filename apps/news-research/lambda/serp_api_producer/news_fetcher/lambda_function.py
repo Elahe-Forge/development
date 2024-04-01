@@ -91,19 +91,19 @@ def convert_relative_date_to_actual(input_date: str) -> str:
             if match:
                 amount = int(match.group(1))
                 if unit == 'hours':
-                    return (current_date - timedelta(hours=amount)).strftime("%Y/%m/%d")
+                    return (current_date - timedelta(hours=amount)).strftime("%Y-%m-%d")
                 elif unit == 'days':
-                    return (current_date - timedelta(days=amount)).strftime("%Y/%m/%d")
+                    return (current_date - timedelta(days=amount)).strftime("%Y-%m-%d")
                 elif unit == 'weeks':
-                    return (current_date - timedelta(weeks=amount)).strftime("%Y/%m/%d")
+                    return (current_date - timedelta(weeks=amount)).strftime("%Y-%m-%d")
                 elif unit == 'months':
-                    return (current_date - relativedelta(months=amount)).strftime("%Y/%m/%d")
+                    return (current_date - relativedelta(months=amount)).strftime("%Y-%m-%d")
                 elif unit == 'years':
-                    return (current_date - relativedelta(years=amount)).strftime("%Y/%m/%d")
+                    return (current_date - relativedelta(years=amount)).strftime("%Y-%m-%d")
         
         # If the input is similar to 'Jul 29, 2015'
         actual_date = datetime.strptime(input_date, "%b %d, %Y") 
-        return actual_date.strftime("%Y/%m/%d")
+        return actual_date.strftime("%Y-%m-%d")
     
     except Exception as e:
             logger.error(f"Error getting actual date: {e}")
@@ -116,16 +116,26 @@ def store_news(news_results, table, company_name):
     """
     for item in news_results:
         try:
-            table.put_item(Item={
-                'company_name': company_name,
-                'position': item.get('position'),
-                'link': item.get('link'),
-                'title': item.get('title'),
-                'source': item.get('source'),
-                'date': convert_relative_date_to_actual(item.get('date')),
-                'snippet': item.get('snippet'),
-                'thumbnail': item.get('thumbnail')
-            })
+            date = convert_relative_date_to_actual(item.get('date'))
+            combined_key = f"{company_name}-{item.get('link')}-{date}"
+
+            response = table.get_item(Key={'company_name_link_date': combined_key, 'date': date})
+
+            logger.info(f"response: {response}")
+            if 'Item' not in response:
+                table.put_item(Item={
+                    'company_name_link_date': combined_key,
+                    'date': date,
+                    'position': item.get('position'),
+                    'link': item.get('link'),
+                    'title': item.get('title'),
+                    'source': item.get('source'),
+                    'snippet': item.get('snippet'),
+                    'thumbnail': item.get('thumbnail')
+                })
+                logger.info(f"news_results {item}")
+            else:
+                logger.info(f"no new news_results")
         except Exception as e:
             logger.error(f"Error storing news item in DynamoDB for {company_name}: {e}")
 

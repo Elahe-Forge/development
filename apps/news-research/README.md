@@ -1,7 +1,7 @@
 
 # News Research Project
-This AWS-based project operates on a serverless architecture, primarily using Lambda functions, DynamoDB, and SQS, orchestrated through AWS CDK. The central mechanism involves two Lambda functions: a parent function that scans the DynamoDB `news-research-issuers-table` for companies (issuers) requiring news updates, and a child function that fetches news for each issuer using SerpAPI. When the parent function identifies issuers needing updates (if `last_visited` attribute is updated more than 24 hours ago), it enqueues these tasks into an SQS queue. 
-The child function, triggered by messages in this queue, processes each issuer independently, retrieving relevant news and storing it in `news-table` DynamoDB table. This design allows for the child function instances running in parallel to handle multiple issuers simultaneously. The entire setup is defined and deployed using AWS CDK.
+This AWS-based project operates on a serverless architecture, primarily using Lambda functions and SQS, orchestrated through AWS CDK. The central mechanism involves three Lambda functions: a function that gets the name of companies (issuers) from Athena, a function that fetches news for each issuer using SerpAPI, and a function that summarizes the news (adds tags, etc) using LLM. These tasks are implemented using SQS queues. 
+The entire setup is defined and deployed using AWS CDK. See the Miro board for more info and the arch design: https://miro.com/app/board/uXjVNP-1p2E=/
 
 ## Steps to Run
 
@@ -29,7 +29,9 @@ The child function, triggered by messages in this queue, processes each issuer i
 8. Make sure the Docker is up and running
 
 9. Deploy the Stack
-    - Run `cdk deploy` in the terminal.
+    - To deploy a specific stack: `cdk deploy news-research`
+    - To deploy multiple specific stacks: `cdk deploy news-research news-evaluation`
+    - To deploy all stacks in the app: `cdk deploy --all`
 
 10. After deployment, a `NEWSAPIEndpoint` will be returned as output. Use it to invoke the API
     - To run for all the companies available in `news-research-issuers-table`, run 

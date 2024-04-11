@@ -1,7 +1,7 @@
 import os
+import time
 from pathlib import Path
 from typing import Dict, List
-import time
 
 import boto3
 import streamlit as st
@@ -23,7 +23,6 @@ from llama_index.llms.bedrock import Bedrock
 from llama_index.llms.openai import OpenAI
 from llama_index.readers.athena import AthenaReader
 from sqlalchemy import text
-
 
 os.environ["OPENAI_API_KEY"] = "YOUR KEY HERE"
 AWS_REGION = "us-west-2"
@@ -80,23 +79,23 @@ engine = athena.create_athena_engine(
 table_list = [
     "icms_issuer",
     "secondary_transactions",
-    "icms_funding_rounds",
+    "funding_rounds",
     "public_marks",
-    "vwap",
-    "icms_issuer_investor",
     "ioi_history",
-    "icms_issuer_key_person",
+    "forge_prices",
+    "vwap",
+    "icms_issuer_ipo_event",
 ]
 
 table_description = [
-    "General information on each issuer, such as sector, sub sector, location, etc. Slug is the unique id for issuer.",
-    "Secondary transactions or trades for each issuer. This involves the buying and selling of the issuers shares.",
-    "Funding round information for each issuer. For instance, the Series Seed, Series A, Series B funding round information",
-    "Public marks information for each issuer. Public marks is the value assigned to issuers by mutual funds. These “marks,” which represent the price expressions of some of the largest, most well-informed institutional investors, are emerging as an additional metric that can be used by other investors to more accurately value their private holdings.",
-    "Volume-weighted average price (vwap) for each issuer. The table contains various prices across different timespans. vwap_7 is the 7 day volume-weighted average price, vwap_30 is the 30 day volume-weighted average price, etc.",
-    "Investors for each issuer. Basically who invested in the issuer.",
-    "Indication of Interest (IOI) for each issuer. An indication of interest is an underwriting expression showing a conditional, non-binding interest in buying a security of the issuer.",
-    "Key people at the issuers.",
+    "General information on each issuer, such as sector, sub sector, location, etc. Primary key: slug.",
+    "Trade information for each issuer or company, involving the buying and selling of the company's shares. Foreign key: issuer_id_name",
+    "Funding round information for each issuer or company. For instance, the Series Seed, Series A, Series B funding round information. Foreign key: issuer_id_name",
+    "Public marks information for each issuer or company. Public marks is the value assigned to issuers by mutual funds. These “marks,” which represent the price expressions of some of the largest, most well-informed institutional investors, are emerging as an additional metric that can be used by other investors to more accurately value their private holdings. Foreign key: issuer_id_name",
+    "Indication of Interest (IOI) for each issuer or company. An indication of interest is an underwriting expression showing a conditional, non-binding interest in buying a security of the issuer. Foreign key: issuer_id_name",
+    "Share price for each issuer or company based on Forge's methodology. Foreign key: issuer_slug",
+    "Volume-weighted average price (vwap) for each issuer or company. The table contains various prices across different timespans. vwap_7 is the 7 day volume-weighted average price, vwap_30 is the 30 day volume-weighted average price, etc. Foreign key: issuer_slug",
+    "Initial Public Offering (IPO) events for an issuer or company. Foreign key: issuer_slug",
 ]
 
 sql_database = SQLDatabase(engine, include_tables=table_list)
@@ -113,7 +112,7 @@ obj_index = ObjectIndex.from_objects(
     VectorStoreIndex,
 )
 
-obj_retriever = obj_index.as_retriever(similarity_top_k=2)
+obj_retriever = obj_index.as_retriever(similarity_top_k=3)
 
 
 @st.cache_resource(show_spinner=False)
@@ -136,28 +135,35 @@ def index_all_tables(
                 # get all rows from table
                 with engine.connect() as conn:
                     # Customized Queries for specific tables to improve data quality
-                    if table_name == "vwap":
-                        query_str = f"""SELECT issuer_slug, calc_date, share_type, 
-                        min(vwap_7) vwap_7
-                        , min(vwap_30) vwap_30
-                        , min(vwap_45) vwap_45
-                        , min(vwap_60) vwap_60
-                        , min(vwap_90) vwap_90 
-                        FROM "{table_name}" 
-                        where calc_date >= date('2023-06-01')
-                        group by issuer_slug, calc_date, share_type;"""
+                    if table_name == "forge_prices":
+                        query_str = f"""SELECT * from forge_prices limit 500"""
+                    elif table_name == "vwap":
+                        query_str = f"""SELECT * from vwap limit 500"""
+                    elif table_name == "funding_rounds":
+                        query_str = f"""SELECT fr.*, ii.sector, ii.sub_sector 
+                                    FROM funding_rounds fr
+                                    join icms_issuer ii
+                                    on fr.issuer_id_name = ii.slug"""
+                    elif table_name == "public_marks":
+                        query_str = f"""SELECT pm.*, ii.sector, ii.sub_sector 
+                                    FROM public_marks pm
+                                    join icms_issuer ii
+                                    on pm.issuer_id_name = ii.slug"""
+                    elif table_name == "secondary_transactions":
+                        query_str = f"""SELECT st.*, ii.sector, ii.sub_sector 
+                                    FROM secondary_transactions st
+                                    join icms_issuer ii
+                                    on st.issuer_id_name = ii.slug"""
                     elif table_name == "ioi_history":
-                        query_str = f"""
-                        SELECT * 
-                        FROM {table_name} 
-                        where record_date >= date('2022-01-01');
-                        """
-                    elif table_name == "icms_issuer_key_person":
-                        query_str = f"""
-                        SELECT * FROM {table_name}
-                        where updated_at >= date('2023-01-01')
-                        ;
-                        """
+                        query_str = f"""SELECT ih.*, ii.sector, ii.sub_sector 
+                                    FROM ioi_history ih
+                                    join icms_issuer ii
+                                    on ih.issuer_id_name = ii.slug"""
+                    elif table_name == "icms_issuer_ipo_event":
+                        query_str = f"""SELECT ie.*, ii.sector, ii.sub_sector 
+                                    FROM icms_issuer_ipo_event ie
+                                    join icms_issuer ii
+                                    on ie.issuer_slug = ii.slug"""
                     else:
                         query_str = f'SELECT * FROM "{table_name}"'
 
@@ -213,7 +219,7 @@ def get_table_context_and_rows_str(
 
         # also lookup vector index to return relevant table rows
         vector_retriever = vector_index_dict[table_schema_obj.table_name].as_retriever(
-            similarity_top_k=2
+            similarity_top_k=10
         )
         relevant_nodes = vector_retriever.retrieve(query_str)
         if len(relevant_nodes) > 0:
@@ -241,8 +247,6 @@ def parse_response_to_sql(response: ChatResponse) -> str:
     sql_result_start = response.find("SQLResult:")
     if sql_result_start != -1:
         response = response[:sql_result_start]
-
-    print(response.strip().strip("```").strip())
     return response.strip().strip("```").strip()
 
 
@@ -250,11 +254,37 @@ sql_parser_component = FnComponent(fn=parse_response_to_sql)
 
 # text2sql_prompt = DEFAULT_TEXT_TO_SQL_PROMPT.partial_format(dialect=engine.dialect.name)
 
-text2sql_prompt_str = """Given an input question, first create a syntactically correct Amazon Athena query to run, then look at the results of the query and return the answer.
+text2sql_prompt_str = """Given an input question, fully understand the questionso you can first create a syntactically correct Amazon Athena query to run, then look at the results of the query and return the answer.
 
-When querying for date specific items remember use this syntax: date("2021-01-01") as an example.
+Never query for all the columns from a specific table, only ask for a few relevant columns given the question. DO NOT USE DATE_SUB! This will throw an error. Do not make up columns. User your table knowledge to select the best columns to answer the question.
 
-Never query for all the columns from a specific table, only ask for a few relevant columns given the question.
+When querying for date specific items DO NOT USE DATE_SUB! This will throw an error. Use this syntax instead: 
+- date("2021-01-01")
+- to get current date use CURRENT_DATE(date). For example to get current year use YEAR(CURRENT_DATE) 
+- to get year use YEAR(date)
+- to get month use MONTH(date)
+- to get quarter use QUARTER(date)
+
+
+For sector or sub sector information:
+- USE both sector and sub_sector columns in the query. For example:  (sector in ('BioTech & Pharma') OR sub_sector in ('BioTech & Pharma'))
+- ACCESS the relevant information to identify the proper sector and or sub sector to query. For example Green Energy could mean Clean Energy, Fintech could mean FinTech software, Biotech could mean BioTech & Pharma, etc
+- ONLY use the ICMS_ISSUER table to join and pull the sector and sub_sector columns, so you must join with icms_issuer to access sector and sub sector information
+
+Remember:
+- if joining with icms_issuer table use "slug" column
+    - secondary_transactions join issuer_id_name = slug
+    - funding_rounds join issuer_id_name = slug
+    - ioi_history join issuer_id_name = slug
+    - public_marks join isser_id = slug
+    - forge_prices join isser_id = slug
+    - vwap join isser_slug = slug
+- to use the secondary_transactions table for trade information, not forge_prices or vwap
+- to use today's date as the current date
+- if output in cents convert to dollars
+- DO NOT use alias in GROUP BY or ORDER BY clauses. This will throw an error
+- write case statement if dividng by a number to account errors
+    - for example,  CASE WHEN total_shares = 0 OR total_shares IS NULL THEN 0 ELSE valuation / total_shares END AS value_per_share
 
 Pay attention to use only the column names that you can see in the schema description. Be careful to not query for columns that do not exist. Pay attention to which column is in which table. Also, qualify column names with the table name when needed. You are required to use the following format, each taking one line:
 
@@ -335,8 +365,6 @@ def summarize_chat_history(llm, chat_history_list, n=20):
     return llm.complete(f"Summarize: {chat_history}")
 
 
-print("State", st.session_state.messages)
-
 if prompt := st.chat_input(
     "Your question"
 ):  # Prompt for user input and save to chat history
@@ -350,16 +378,20 @@ for message in st.session_state.messages:  # Display the prior chat messages
 if st.session_state.messages[-1]["role"] != "assistant":
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            if len(st.session_state.messages) <= 2:
+            try:
                 response = qp.run(query=f"{prompt}")
-            else:
-                # Add chat context history to chat after initial prompt
-                response = qp.run(
-                    query=f"{prompt}\n Chat history context: {summarize_chat_history(llm_to_use, st.session_state.messages)}"
-                )
-            content = parse_llm_output_string(response)
-            print(response)
-            print(content)
+                print(response)
+                # if len(st.session_state.messages) <= 2:
+                #     response = qp.run(query=f"{prompt}")
+                # else:
+                #     # Add chat context history to chat after initial prompt
+                #     response = qp.run(
+                #         query=f"{prompt}\n Chat history context: {summarize_chat_history(llm_to_use, st.session_state.messages)}"
+                #     )
+
+                content = parse_llm_output_string(response)
+            except:
+                content = "Sorry, I'm not able to answer your question."
 
             st.write(content)
             message = {"role": "assistant", "content": content}

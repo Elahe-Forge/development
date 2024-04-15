@@ -12,12 +12,13 @@ import logging
 import pandas as pd
 from bs4 import BeautifulSoup
 from langchain.chains import LLMChain
-from langchain_openai.chat_models import ChatOpenAI
 from langchain.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-import io
+from langchain_openai import ChatOpenAI
+import io 
+
 import re
 import requests
 import uuid
@@ -286,13 +287,16 @@ def get_issuer_items(records : dict, source_type : str) -> dict:
         try:
             if record['eventName'] != 'REMOVE':
                 sequence_number = record[source_type]['SequenceNumber']
-                issuer = record[source_type]['Keys']['company_name']['S']
-                news_date = record[source_type]['NewImage']['date']['S']
+                company_name_link_date = record[source_type]['Keys']['company_name_link_date']['S']
+                issuer = record[source_type]['NewImage']['company_name']['S']
+                news_date = record[source_type]['Keys']['date']['S']
                 news_title = record[source_type]['NewImage']['title']['S']
                 news_source = record[source_type]['NewImage']['source']['S']
                 news_url = record[source_type]['NewImage']['link']['S']
 
+
                 news_records.append({'sequence_number':sequence_number,
+                                     'company_name_link_date':company_name_link_date,
                                         'issuer':issuer,
                                         'news_date':news_date,
                                         'news_title':news_title,
@@ -303,8 +307,9 @@ def get_issuer_items(records : dict, source_type : str) -> dict:
             logger.error(f'problem with record: {record}\nerror{e}')
     return news_records
 
+
 # To persist news analysis to S3 as Parquet
-def persist_news_analysis(news_records, s3_bucket, s3_key_prefix=None):
+def persist_news_analysis(news_records, s3_bucket):
     s3_client = boto3.client('s3')
 
     if len(news_records) > 0:
@@ -318,9 +323,7 @@ def persist_news_analysis(news_records, s3_bucket, s3_key_prefix=None):
                 parquet_buffer = io.BytesIO()
                 df.to_parquet(parquet_buffer, index=False)
 
-                # If no prefix is provided, use an empty string
-                s3_key_prefix = s3_key_prefix or ''
-                s3_object_key = f'{s3_key_prefix}{issuer_name}/news_record_{timestamp}_{unique_id}.parquet'
+                s3_object_key = f'news-articles/{issuer_name}/news_record_{timestamp}_{unique_id}.parquet'
                 s3_client.put_object(Bucket=s3_bucket, Key=s3_object_key, Body=parquet_buffer.getvalue())
                 
                 logger.info(f"Persisted record for issuer '{issuer_name}' to S3 bucket '{s3_bucket}' with key '{s3_object_key}'")
@@ -357,3 +360,4 @@ def handler(event, context):
     else:
         logger.error('Error initializing llm')
         return {'batchItemFailures': []}
+

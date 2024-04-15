@@ -58,7 +58,7 @@ def get_google_news(issuer_name, secret):
         params = {
             "q":  issuer_name + " company",
             "tbm": "nws",
-            # "num": 1,
+            "num": 1,
             "api_key": secret['SERPAPI_API_KEY']
         }
         search = GoogleSearch(params)
@@ -125,6 +125,7 @@ def store_news(news_results, table, company_name):
             if 'Item' not in response:
                 table.put_item(Item={
                     'company_name_link_date': combined_key,
+                    'company_name':company_name,
                     'date': date,
                     'position': item.get('position'),
                     'link': item.get('link'),

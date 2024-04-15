@@ -15,7 +15,6 @@ from constructs import Construct
 import os
 
 
-
 class NewsResearchStack(Stack):
 
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
@@ -28,7 +27,7 @@ class NewsResearchStack(Stack):
             partition_key=aws_dynamodb.Attribute(name='company_name_link_date', type=aws_dynamodb.AttributeType.STRING),
             sort_key=aws_dynamodb.Attribute(name='date', type=aws_dynamodb.AttributeType.STRING),
             stream= aws_dynamodb.StreamViewType.NEW_AND_OLD_IMAGES
-        )
+        ) 
 
         # SQS Queue for issuers
         issuer_queue = aws_sqs.Queue(

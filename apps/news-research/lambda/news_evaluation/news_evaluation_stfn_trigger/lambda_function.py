@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-def lambda_handler(event, context):
+def handler(event, context):
     # Initialize client
     stepfunctions_client = boto3.client('stepfunctions')
 
@@ -25,11 +25,11 @@ def lambda_handler(event, context):
             # Start the Step Functions state machine execution
             response = stepfunctions_client.start_execution(
                 stateMachineArn=state_machine_arn,
-                input=json.dumps(message_body)
+                input=json.dumps({"newsData": message_body})
             )
 
             # Log the response
-            logger.info(f"Started execution: {response['executionArn']}")
+            logger.info(f"Started execution for: {message_body}")
 
         except Exception as e:
             logger.error(f"Error : {str(e)} - - response: {response}")

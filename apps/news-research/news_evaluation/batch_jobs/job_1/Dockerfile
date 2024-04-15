@@ -12,9 +12,9 @@ COPY requirements.txt /app/
 RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 # Clone the selfcheckgpt repository and install it
-RUN git clone https://github.com/potsawee/selfcheckgpt.git /app/selfcheckgpt \
-    && cd /app/selfcheckgpt \
-    && pip install .
+# RUN git clone https://github.com/potsawee/selfcheckgpt.git /app/selfcheckgpt \
+#     && cd /app/selfcheckgpt \
+#     && pip install .
 
 # Copy the batch job script into the container at /app
 COPY job_1_script.py /app/

@@ -11,24 +11,48 @@ from nltk.translate.bleu_score import sentence_bleu
 from nltk.translate.meteor_score import single_meteor_score
 import torch
 from selfcheckgpt.modeling_mqag import MQAG
-
+import logging
+import datetime
+import uuid
+import pandas as pd
+from botocore.exceptions import ClientError
+import io
 
 nltk.download('punkt')
 nltk.download('wordnet')
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
-def process_data(data):
-    # Process the data (e.g., calculate metrics)
-    processed_data = calculate_metrics(data['reference'], data['hypothesis'])
 
-    # Write the processed data back to the database (e.g., using Athena or another service)
-    write_data_to_database(processed_data)
 
-    return processed_data
 
-def write_data_to_database(data):
-    # Code to write the processed data back to the database
-    pass
+def write_data_to_database(s3_bucket, news_metrics):
+    s3_client = boto3.client('s3')
+    if len(news_metrics) > 0:
+        for record in news_metrics:
+            try:
+                issuer_name = record['issuer'].replace(" ", "_").lower()  # Replace spaces with underscores and convert to lowercase
+                timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")  
+                unique_id = uuid.uuid4()  # Generate a unique identifier to ensure uniqueness
+                
+                df = pd.DataFrame([record])
+                parquet_buffer = io.BytesIO()
+                df.to_parquet(parquet_buffer, index=False)
+
+                s3_object_key = f'news-articles/{issuer_name}/news_record_{timestamp}_{unique_id}.parquet'
+                s3_client.put_object(Bucket=s3_bucket, Key=s3_object_key, Body=parquet_buffer.getvalue())
+                
+                logger.info(f"Persisted record for issuer '{issuer_name}' to S3 bucket '{s3_bucket}' with key '{s3_object_key}'")
+            except ClientError as e:
+                logger.error(f"Failed to persist record for issuer '{issuer_name}' to S3 bucket '{s3_bucket}': {e}")
+            except Exception as e:
+                logger.error(f"Unexpected error occurred while persisting record for issuer '{issuer_name}': {e}")
+    else:
+        logger.info("No records to persist")
+        
+
+
 
 
 def calculate_metrics(reference, hypothesis):
@@ -132,11 +156,19 @@ def calculate_metrics(reference, hypothesis):
 
 
 if __name__ == "__main__":
-    # Read input data from environment variable or command-line argument
-    input_data = json.loads(os.environ.get('INPUT_DATA'))
+    
+    s3_bucket = os.environ.get("BUCKET_NAME")
+    input_data = os.environ.get('INPUT_DATA')
 
-    # Process the data
-    processed_data = process_data(input_data)
 
-    # Output the processed data (for logging or further processing)
-    print(json.dumps(processed_data))
+    # input_data = json.loads(os.environ.get('INPUT_DATA'))
+
+    logger.info(f"input_data: {input_data}")
+
+    # news_metrics = calculate_metrics(input_data['reference'], input_data['hypothesis'])
+    
+    # write_data_to_database(s3_bucket, news_metrics)
+
+    # logger.info(f"news_metrics: {news_metrics}")
+    
+

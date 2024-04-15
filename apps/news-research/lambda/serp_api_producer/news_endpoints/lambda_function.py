@@ -47,7 +47,7 @@ def handler(event, context):
     athena_database = os.environ['ATHENA_DATABASE']
     athena_table = os.environ['ATHENA_TABLE']
     athena_output_location = os.environ['S3_OUTPUT_LOCATION']
-    athena_query = f"SELECT COALESCE(legal_entity_name, issuer_id_name) AS name_or_id FROM {athena_table} limit 300"
+    athena_query = f"SELECT COALESCE(legal_entity_name, issuer_id_name) AS name_or_id FROM {athena_table} limit 100"
 
     sqs_client = boto3.client('sqs')
     queue_url = os.environ['ISSUER_QUEUE_URL']

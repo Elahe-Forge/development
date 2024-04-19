@@ -86,8 +86,8 @@ class NewsResearchStack(Stack):
           runtime       = aws_lambda.Runtime.FROM_IMAGE,
           environment  ={
                 'ISSUER_QUEUE_URL': issuer_queue.queue_url,
-                'ATHENA_DATABASE': 'datalake-curated-qa',
-                'ATHENA_TABLE': 'issuers',
+                'ATHENA_DATABASE': 'datalake-curated-production',
+                'ATHENA_TABLE': 'icms_issuer', 
                 'S3_OUTPUT_LOCATION': 's3://newsresearch/'
           },
           function_name = "NewsEndpointsFunction",
@@ -126,7 +126,8 @@ class NewsResearchStack(Stack):
         api = aws_apigateway.LambdaRestApi(
             self, 'NewsApi',
             handler=news_endpoints_lambda,
-            proxy=False
+            proxy=False,
+            rest_api_name='NewsApi'
         )
 
         # Resource for running all companies
@@ -156,7 +157,7 @@ class NewsResearchStack(Stack):
           function_name = "NewsConsumerFunction",
           memory_size   = 1024, # default 128 causes memory allocation limit error
           reserved_concurrent_executions = 10,
-          timeout       = Duration.seconds(300),
+          timeout       = Duration.seconds(900),
         )
 
         news_table.grant_read_data(news_consumer_lambda)

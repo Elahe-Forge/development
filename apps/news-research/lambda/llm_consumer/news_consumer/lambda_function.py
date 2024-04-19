@@ -337,6 +337,7 @@ def persist_news_analysis(news_records, s3_bucket):
    
 
 def handler(event, context):
+    s3_bucket = os.environ['S3_BUCKET']
     llm = init_llm()
     if llm:     
         news_records = get_issuer_items(event['Records'], 'dynamodb')
@@ -353,8 +354,7 @@ def handler(event, context):
                     news_record['tags'] = get_tags(raw_news_text, llm)
                     news_record['raw'] = raw_news_text
             except Exception as e:
-                logger.error(f'Error processing news record: {news_record}, error: {e}')
-        s3_bucket = os.environ['S3_BUCKET']
+                logger.error(f'Error processing news record: {news_record}, error: {e}')    
         persist_news_analysis(news_records, s3_bucket)
         return {'batchItemFailures': []}
     else:

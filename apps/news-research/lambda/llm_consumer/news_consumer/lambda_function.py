@@ -75,7 +75,6 @@ def get_issuer_items(records : dict, source_type : str) -> dict:
                 news_url = record[source_type]['NewImage']['link']['S']
 
 
-
                 news_records.append({'sequence_number':sequence_number,
                                      'company_name_link_date':company_name_link_date,
                                         'issuer':issuer,
@@ -104,7 +103,6 @@ def persist_news_analysis(news_records, s3_bucket, model_handle, issuer):
     if len(news_records) > 0:
         for record in news_records:
             try:
-                # issuer_name = record['issuer'].replace(" ", "_").lower()  # Replace spaces with underscores and convert to lowercase
                 issuer_name = issuer.replace(" ", "_").lower()  # Replace spaces with underscores and convert to lowercase
                 timestamp = datetime.datetime.now()
                 unique_id = uuid.uuid4()  # Generate a unique identifier to ensure uniqueness
@@ -113,8 +111,8 @@ def persist_news_analysis(news_records, s3_bucket, model_handle, issuer):
                 parquet_buffer = io.BytesIO()
                 df.to_parquet(parquet_buffer, index=False)
 
-                s3_prefix = "news-articles-" + model_handle + "-" + timestamp.strftime("%Y%m%d")  
-                s3_object_key = f'{s3_prefix}/{issuer_name}/news_record_{timestamp.strftime("%Y%m%d%H%M%S%f")}_{unique_id}.parquet'
+                s3_prefix = model_handle + "-" + timestamp.strftime("%Y%m%d")  
+                s3_object_key = f'news-articles/{s3_prefix}/{issuer_name}/news_record_{timestamp.strftime("%Y%m%d%H%M%S%f")}_{unique_id}.parquet'
                 s3_client.put_object(Bucket=s3_bucket, Key=s3_object_key, Body=parquet_buffer.getvalue())
                 
                 logger.info(f"Persisted record for issuer '{issuer_name}' to S3 bucket '{s3_bucket}' with key '{s3_object_key}'")

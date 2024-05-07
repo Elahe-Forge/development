@@ -32,8 +32,8 @@ class NewsEvaluationStack(Stack):
                 platform = aws_ecr_assets.Platform.LINUX_AMD64
         )
         news_evaluation_lambda = aws_lambda.Function(self, 
-            id            = "NewsEvaluationNewsEvaluationDataFetcherLambdaFunction",
-            description   = "NewsEvaluationNewsEvaluationDataFetcherLambdaFunction",
+            id            = "NewsEvaluationDataFetcherLambdaFunction",
+            description   = "NewsEvaluationDataFetcherLambdaFunction",
             code          = news_evaluation_ecr_image,
             handler       = aws_lambda.Handler.FROM_IMAGE,
             runtime       = aws_lambda.Runtime.FROM_IMAGE,

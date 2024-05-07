@@ -9,7 +9,9 @@ from aws_cdk import (
     aws_sqs,
     aws_lambda_event_sources as lambda_event_source,
     aws_ecr_assets,
-    aws_iam
+    aws_iam,
+    aws_s3, 
+    aws_s3_notifications
 )
 from constructs import Construct
 import os
@@ -88,6 +90,7 @@ class NewsResearchStack(Stack):
                 'ISSUER_QUEUE_URL': issuer_queue.queue_url,
                 'ATHENA_DATABASE': 'datalake-curated-production',
                 'ATHENA_TABLE': 'icms_issuer', 
+                'S3_EXCEL_SHEET_LOCATION': 'data-science-news-issuer-list',
                 'S3_OUTPUT_LOCATION': 's3://newsresearch/'
           },
           function_name = "NewsEndpointsFunction",
@@ -142,7 +145,25 @@ class NewsResearchStack(Stack):
         run_s3_resource = api.root.add_resource('run-s3')
         run_s3_resource.add_method('POST')
 
-        # Define the IAM role for Lambda
+        # S3 icms Bucket
+        icms_bucket = aws_s3.Bucket.from_bucket_name(
+            self, "AcceptanceIssuersAppExtracts",
+            bucket_name="fg-acceptance-issuersapp-extracts"
+        )
+
+        # Grant the Lambda function permissions to read from the S3 icms bucket
+        icms_bucket.grant_read(news_endpoints_lambda)
+
+        # Add notification for S3 icms bucket to trigger the Lambda function
+        notification = aws_s3_notifications.LambdaDestination(news_endpoints_lambda)
+        icms_bucket.add_event_notification(
+            aws_s3.EventType.OBJECT_CREATED,
+            notification,
+            aws_s3.NotificationKeyFilter(prefix="projections/issuerProjection/")
+        )
+
+
+        # Define the IAM role for news_consumer Lambda
         lambda_role = aws_iam.Role(self, "LambdaExecutionRole",
                                    assumed_by=aws_iam.ServicePrincipal("lambda.amazonaws.com"),
                                    managed_policies=[
@@ -163,7 +184,6 @@ class NewsResearchStack(Stack):
             actions=["lambda:InvokeFunction"],
             resources=["arn:aws:lambda:us-west-2:*:function:*"]  
         ))
-
 
         news_consumer_ecr_image = aws_lambda.EcrImageCode.from_asset_image(
             # directory = os.path.join(os.getcwd(), "lambda/llm_consumer/news_consumer"),

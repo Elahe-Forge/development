@@ -91,9 +91,9 @@ class NewsResearchStack(Stack):
                 'S3_OUTPUT_LOCATION': 's3://newsresearch/'
           },
           function_name = "NewsEndpointsFunction",
-          memory_size   = 128,
+          memory_size   = 1024, 
           reserved_concurrent_executions = 10,
-          timeout       = Duration.seconds(60),
+          timeout       = Duration.seconds(900),
         )
         
         s3_policy = aws_iam.PolicyStatement(
@@ -138,10 +138,37 @@ class NewsResearchStack(Stack):
         run_issuer_resource = api.root.add_resource('run-issuer')
         run_issuer_resource.add_method('POST')
 
+        # Resource for running an excel sheet from s3
+        run_s3_resource = api.root.add_resource('run-s3')
+        run_s3_resource.add_method('POST')
+
+        # Define the IAM role for Lambda
+        lambda_role = aws_iam.Role(self, "LambdaExecutionRole",
+                                   assumed_by=aws_iam.ServicePrincipal("lambda.amazonaws.com"),
+                                   managed_policies=[
+                                       aws_iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole"),
+                                       aws_iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaVPCAccessExecutionRole")
+                                   ])
+
+        # Custom policy to allow invoking Bedrock model
+        lambda_role.add_to_policy(aws_iam.PolicyStatement(
+            effect=aws_iam.Effect.ALLOW,
+            actions=["bedrock:InvokeModel"],
+            resources=["arn:aws:bedrock:us-west-2::foundation-model/*"]
+        ))
+
+        # Policy to allow this Lambda to invoke another Lambda function
+        lambda_role.add_to_policy(aws_iam.PolicyStatement(
+            effect=aws_iam.Effect.ALLOW,
+            actions=["lambda:InvokeFunction"],
+            resources=["arn:aws:lambda:us-west-2:*:function:*"]  
+        ))
 
 
         news_consumer_ecr_image = aws_lambda.EcrImageCode.from_asset_image(
-            directory = os.path.join(os.getcwd(), "lambda/llm_consumer/news_consumer"),
+            # directory = os.path.join(os.getcwd(), "lambda/llm_consumer/news_consumer"),
+            directory=os.path.join(os.getcwd(), ""),  # Adjust the path to include the project root
+            file="lambda/llm_consumer/news_consumer/Dockerfile",
             platform = aws_ecr_assets.Platform.LINUX_AMD64
         )
 
@@ -151,8 +178,11 @@ class NewsResearchStack(Stack):
           code          = news_consumer_ecr_image,
           handler       = aws_lambda.Handler.FROM_IMAGE,
           runtime       = aws_lambda.Runtime.FROM_IMAGE,
+          role=lambda_role,
           environment   = {
-                'S3_BUCKET': 'data-science-news-output'
+                'S3_BUCKET': 'data-science-news-output',
+                'MODEL_NAME': 'anthropic.claude', #'gpt'
+                'MODEL_VERSION': 'v2' #'3.5-turbo'
           },
           function_name = "NewsConsumerFunction",
           memory_size   = 1024, # default 128 causes memory allocation limit error
@@ -172,20 +202,4 @@ class NewsResearchStack(Stack):
 
         secret_manager = aws_secretsmanager.Secret.from_secret_complete_arn(self, 'data-science-and-ml-models/openai', 'arn:aws:secretsmanager:us-west-2:597915789054:secret:data-science-and-ml-models/openai-Sc0RKh')
         secret_manager.grant_read(news_consumer_lambda)
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
 

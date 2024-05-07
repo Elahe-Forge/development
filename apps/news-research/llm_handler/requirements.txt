@@ -1,0 +1,5 @@
+boto3
+botocore
+langchain
+langchain-openai
+logging

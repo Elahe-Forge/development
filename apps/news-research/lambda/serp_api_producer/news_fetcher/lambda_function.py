@@ -58,7 +58,7 @@ def get_google_news(issuer_name, secret):
         params = {
             "q":  issuer_name + " company",
             "tbm": "nws",
-            "num": 1,
+            "num": 3,
             "api_key": secret['SERPAPI_API_KEY']
         }
         search = GoogleSearch(params)
@@ -73,12 +73,14 @@ def get_google_news(issuer_name, secret):
 
 def convert_relative_date_to_actual(input_date: str) -> str:
     """
-    Convert a relative date like '3 weeks ago', '13 hours ago', '2 months ago' or 'Jul 29, 2015' 
+    Convert a relative date like '3 weeks ago', '13 hours ago', '29 minutes ago', '2 months ago' or 'Jul 29, 2015' 
     to an actual date in 'MM/DD/YYYY' format.
     """
     try:
         current_date = datetime.now()
         patterns = {
+            'seconds': r'(\d+)\s+seconds? ago',
+            'minutes': r'(\d+)\s+minutes? ago',
             'hours': r'(\d+)\s+hours? ago',
             'days': r'(\d+)\s+days? ago',
             'weeks': r'(\d+)\s+weeks? ago',
@@ -90,7 +92,11 @@ def convert_relative_date_to_actual(input_date: str) -> str:
             match = re.search(pattern, input_date, re.IGNORECASE)
             if match:
                 amount = int(match.group(1))
-                if unit == 'hours':
+                if unit == 'seconds':
+                    return (current_date - timedelta(seconds=amount)).strftime("%Y-%m-%d")
+                elif unit == 'minutes':
+                    return (current_date - timedelta(minutes=amount)).strftime("%Y-%m-%d")
+                elif unit == 'hours':
                     return (current_date - timedelta(hours=amount)).strftime("%Y-%m-%d")
                 elif unit == 'days':
                     return (current_date - timedelta(days=amount)).strftime("%Y-%m-%d")
@@ -125,7 +131,7 @@ def store_news(news_results, table, company_name):
             if 'Item' not in response:
                 table.put_item(Item={
                     'company_name_link_date': combined_key,
-                    'company_name':company_name,
+                    'issuer_name':company_name,
                     'date': date,
                     'position': item.get('position'),
                     'link': item.get('link'),
@@ -152,7 +158,7 @@ def handler(event, context):
     # Each record is one SQS message to parse
     for record in event['Records']: 
         message_body = json.loads(record['body']) # body is the actual content of the message that is enqueued in the parent Lambda function
-        company_name = message_body['company_name']
+        company_name = message_body['issuer_name']
     
         news_results = get_google_news(company_name, serpapi_secret_key)
         logger.info(f" news_results {news_results}")

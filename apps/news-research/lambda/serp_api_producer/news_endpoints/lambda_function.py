@@ -8,7 +8,8 @@ import boto3
 import json
 import logging
 import time
-
+import pandas as pd
+from io import BytesIO
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -70,7 +71,7 @@ def handler(event, context):
             logger.info(f"issuer_name: {issuer_name}")        
                 
             try:
-                payload = {'company_name': issuer_name}
+                payload = {'issuer_name': issuer_name}
 
                 # Send message to SQS queue
                 sqs_client.send_message(QueueUrl=queue_url, MessageBody=json.dumps(payload))
@@ -86,7 +87,7 @@ def handler(event, context):
         issuer_name = event.get('body', '').strip()
         if issuer_name:
             try:
-                payload = {'company_name': issuer_name}
+                payload = {'issuer_name': issuer_name}
                 sqs_client.send_message(QueueUrl=queue_url, MessageBody=json.dumps(payload))
                 issuer_count = 1
                 logger.info(f"Enqueued message for {issuer_name} in SQS")
@@ -97,6 +98,51 @@ def handler(event, context):
                 'statusCode': 400,
                 'body': json.dumps('Issuer name is required for run-issuer command.')
             }
+    
+    elif path == '/run-s3':
+        try:
+            s3_client = boto3.client('s3')
+            s3_bucket = "data-science-news-issuer-list"
+                
+            s3_key_prefix = '04-23-24/'  
+
+            # List objects in the specified folder or the entire bucket
+            response = s3_client.list_objects_v2(Bucket=s3_bucket, Prefix=s3_key_prefix)
+            # Check if any objects are found
+            if 'Contents' in response:
+                for item in response['Contents']:
+                    key = item['Key']
+                    if key.endswith('.xlsx'):  # Ensure the file is an Excel file
+                        # Get the object from S3
+                        obj = s3_client.get_object(Bucket=s3_bucket, Key=key)
+                        
+                        # Read the object as an Excel file into a DataFrame
+                        excel_data = obj['Body'].read()
+                        df = pd.read_excel(BytesIO(excel_data))
+                        
+                        # Extract the 'issuerKey' column, assuming it exists
+                        if 'issuerKey' in df.columns:
+                            for issuer_name in df['issuerKey'].dropna().unique(): 
+                                payload = {'issuer_name': issuer_name}
+
+                                # Send message to SQS queue
+                                sqs_client.send_message(QueueUrl=queue_url, MessageBody=json.dumps(payload))
+                                issuer_count += 1
+                                logger.info(f"Enqueued message for {issuer_name} in SQS")
+                        else:
+                            logger.info(f"'issuerKey' column not found in {key}")
+                            
+            else:
+                logger.info("No objects found with the specified S3 bucket.")
+            
+
+        except Exception as e:
+            logger.error(f'Error processing files: {str(e)}')
+            return {
+                'statusCode': 500,
+                'body': json.dumps({'error': str(e)})
+            }
+
 
     else:
         return {

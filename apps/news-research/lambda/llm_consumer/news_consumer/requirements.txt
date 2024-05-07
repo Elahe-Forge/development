@@ -1,8 +1,6 @@
 bs4
 boto3
 botocore
-langchain
-langchain-openai
 logging
 requests
 pandas

@@ -1,15 +1,21 @@
 FROM public.ecr.aws/lambda/python:3.11
 
-# Copy requirements.txt
-COPY requirements.txt ${LAMBDA_TASK_ROOT}
 
-# Install the specified packages
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+# Copy the main Lambda function requirements and install them
+COPY lambda/llm_consumer/news_consumer/requirements.txt .
 RUN pip install --upgrade pip
-#RUN pip install  -r requirements.txt
 RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
-# Copy function code
-COPY lambda_function.py ${LAMBDA_TASK_ROOT}
+# Copy the shared utility llm_handler.py from the llm_handler directory
+COPY llm_handler/llm_handler.py .
+COPY llm_handler/requirements.txt .
+RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
-# Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
-CMD [ "lambda_function.handler" ]
+
+# Copy the Lambda function code
+# This path must be relative to the context now set at the project root
+COPY lambda/llm_consumer/news_consumer/lambda_function.py .
+
+CMD ["lambda_function.handler"]

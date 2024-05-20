@@ -25,6 +25,26 @@ logger.setLevel(logging.INFO)
 s3_client = boto3.client('s3')
 lambda_client = boto3.client('lambda')
 
+
+def process_records(records, metrics, llm_processor, model_name, model_version, s3_bucket):
+    """ Process each news record and persist results. """
+    for news_record in records:
+        try:
+            raw_news_text = get_raw_news_text(news_record['link'])
+            if raw_news_text:
+                results = {}
+                for metric in metrics:
+                    result = llm_processor.process_metric(metric, raw_news_text, source=news_record.get('source', ''))
+                    results[metric] = result
+            
+                news_record.update(results)
+                news_record.update({'model_name': model_name, 'model_version': model_version, 'raw': raw_news_text})
+                persist_news_analysis(news_record, s3_bucket, f"{model_name}-{model_version}")
+
+        except Exception as e:
+            logger.error(f'Error processing news record: {news_record}, error: {e}')
+
+
 # Get the news from the url and strip out all html returning raw text
 #
 def get_raw_news_text(url : str) -> str: # throws http error if problems w/request
@@ -55,111 +75,32 @@ def get_raw_news_text(url : str) -> str: # throws http error if problems w/reque
         return None
 
 
-    
-# Intent was to make lambda reusable for different source types
-# only DynamoDB is supported    
-def get_issuer_items(records : dict, source_type : str) -> dict:
-    if source_type != 'dynamodb':
-        raise Exception(f'source type: {source_type} not supported')
-
-    news_records = []
-    for record in records:
+def persist_news_analysis(news_records, s3_bucket, model_handle):
+    """ 
+    Persist news analysis to S3 as Parquet. 
+    """
+    if news_records:  
         try:
-            if record['eventName'] != 'REMOVE':
-                sequence_number = record[source_type]['SequenceNumber']
-                company_name_link_date = record[source_type]['Keys']['company_name_link_date']['S']
-                issuer = record[source_type]['NewImage']['issuer_name']['S']
-                news_date = record[source_type]['Keys']['date']['S']
-                news_title = record[source_type]['NewImage']['title']['S']
-                news_source = record[source_type]['NewImage']['source']['S']
-                news_url = record[source_type]['NewImage']['link']['S']
-
-
-                news_records.append({'sequence_number':sequence_number,
-                                     'company_name_link_date':company_name_link_date,
-                                        'issuer':issuer,
-                                        'news_date':news_date,
-                                        'news_title':news_title,
-                                        'news_source':news_source,
-                                        'news_url':news_url})
+            logger.info(f"news_records '{news_records}'")
+            issuer_name = news_records['issuer_name'].replace(" ", "_").lower()  # Replace spaces with underscores and convert to lowercase
+            timestamp = datetime.datetime.now()
+            unique_id = uuid.uuid4()  # Generate a unique identifier to ensure uniqueness
             
+            df = pd.DataFrame([news_records])
+            parquet_buffer = io.BytesIO()
+            df.to_parquet(parquet_buffer, index=False)
+
+            s3_prefix = model_handle + "-" + timestamp.strftime("%Y%m%d")  
+            s3_object_key = f'news-articles/{s3_prefix}/{issuer_name}/news_record_{timestamp.strftime("%Y%m%d%H%M%S%f")}_{unique_id}.parquet'
+            s3_client.put_object(Bucket=s3_bucket, Key=s3_object_key, Body=parquet_buffer.getvalue())
+            
+            logger.info(f"Persisted record for issuer '{issuer_name}' to S3 bucket '{s3_bucket}' with key '{s3_object_key}'")
+        except ClientError as e:
+            logger.error(f"Failed to persist record for issuer '{issuer_name}' to S3 bucket '{s3_bucket}': {e}")
         except Exception as e:
-            logger.error(f'problem with record: {record}\nerror{e}')
-    return news_records
+            logger.error(f"Unexpected error occurred while persisting record for issuer '{issuer_name}': {e}")
+    
 
-def group_records_by_issuer(records):
-    grouped_records = {}
-    for record in records:
-        issuer = record['issuer']
-        if issuer not in grouped_records:
-            grouped_records[issuer] = []
-        grouped_records[issuer].append(record)
-    return grouped_records
-
-# To persist news analysis to S3 as Parquet
-def persist_news_analysis(news_records, s3_bucket, model_handle, issuer):
-    s3_client = boto3.client('s3')
-
-    if len(news_records) > 0:
-        for record in news_records:
-            try:
-                issuer_name = issuer.replace(" ", "_").lower()  # Replace spaces with underscores and convert to lowercase
-                timestamp = datetime.datetime.now()
-                unique_id = uuid.uuid4()  # Generate a unique identifier to ensure uniqueness
-                
-                df = pd.DataFrame([record])
-                parquet_buffer = io.BytesIO()
-                df.to_parquet(parquet_buffer, index=False)
-
-                s3_prefix = model_handle + "-" + timestamp.strftime("%Y%m%d")  
-                s3_object_key = f'news-articles/{s3_prefix}/{issuer_name}/news_record_{timestamp.strftime("%Y%m%d%H%M%S%f")}_{unique_id}.parquet'
-                s3_client.put_object(Bucket=s3_bucket, Key=s3_object_key, Body=parquet_buffer.getvalue())
-                
-                logger.info(f"Persisted record for issuer '{issuer_name}' to S3 bucket '{s3_bucket}' with key '{s3_object_key}'")
-            except ClientError as e:
-                logger.error(f"Failed to persist record for issuer '{issuer_name}' to S3 bucket '{s3_bucket}': {e}")
-            except Exception as e:
-                logger.error(f"Unexpected error occurred while persisting record for issuer '{issuer_name}': {e}")
-    else:
-        logger.info("No records to persist")
-
-def load_state(s3_bucket):
-    try:
-        response = s3_client.get_object(Bucket=s3_bucket, Key='state.json')
-        return json.loads(response['Body'].read().decode('utf-8'))
-    except s3_client.exceptions.NoSuchKey:
-        return []
-
-def update_state(s3_bucket, processed_issuers):
-    s3_client.put_object(Bucket=s3_bucket, Key='state.json', Body=json.dumps(processed_issuers))
-
-def trigger_next_invocation(context, s3_bucket, processed_issuers, event):
-    update_state(s3_bucket, processed_issuers)  # Ensure state is updated before reinvocation
-    lambda_client.invoke(
-        FunctionName=context.function_name,
-        InvocationType='Event',
-        Payload=json.dumps(event)
-    )
-    logger.info('Reinvoked lambda due to imminent timeout.')
-
-def process_records(records, metrics, llm_processor, model_name, model_version):
-    processed_records = []
-    for news_record in records:
-        try:
-            raw_news_text = get_raw_news_text(news_record['news_url'])
-            if raw_news_text:
-                for metric in metrics:
-                    result = llm_processor.process_metric(metric, raw_news_text, source=news_record.get('news_source', ''))
-                    news_record[metric] = result
-                    logger.info(f"Metric: {metric}: {news_record[metric]}")
-
-                news_record['model_name'] = model_name
-                news_record['model_version'] = model_version
-                news_record['raw'] = raw_news_text
-            processed_records.append(news_record)
-        except Exception as e:
-            logger.error(f'Error processing news record: {news_record}, error: {e}')
-    return processed_records
 
 def initialize_llm_processor(model_name, model_handle):
     if model_name.lower() == 'openai':
@@ -176,29 +117,14 @@ def handler(event, context):
     model_handle = f"{model_name}-{model_version}"
 
     metrics = ["summary", "reliability", "sentiment", "relevance", "controversy", "tags"]
-    remaining_time = context.get_remaining_time_in_millis
-
-    # Load processed issuers from state.json in S3
-    processed_issuers = load_state(s3_bucket)
-
-    # Fetch news records and group them by issuer
-    news_records = get_issuer_items(event['Records'], 'dynamodb')
-    grouped_records = group_records_by_issuer(news_records)
-
+    
     # Initialize the appropriate LLM processor based on the model_name
     llm_processor = initialize_llm_processor(model_name, model_handle)
 
-    for issuer, records in grouped_records.items():
-        if issuer in processed_issuers:
-            continue  # Skip already processed issuers
-
-        if remaining_time() < 120000:  # If less than 2 minutes remain
-            trigger_next_invocation(context, s3_bucket, processed_issuers, event)
-            return {'status': 'Continuation triggered due to timeout risk'}
-
-        processed_records = process_records(records, metrics, llm_processor, model_name, model_version)
-        persist_news_analysis(processed_records, s3_bucket, model_handle, issuer)
-        processed_issuers.append(issuer)
-        update_state(s3_bucket, processed_issuers)  # Update state after each issuer is processed
+    for record in event['Records']:
+        logger.info(f"Record: '{record}'")
+        message_body = json.loads(record['body'])
+        process_records([message_body['news_item']], metrics, llm_processor, model_name, model_version, s3_bucket)
+        
 
     return {'status': 'Processing complete'}

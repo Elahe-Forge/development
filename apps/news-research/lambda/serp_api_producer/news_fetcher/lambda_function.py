@@ -1,7 +1,7 @@
 
 """
 Processes messages from the SQS queue. 
-Fetches and stores news for each issuer received in the message.
+Fetches and stores (DynamoDB) and sends (SQS) news for each issuer received in the message.
 """
 
 import os
@@ -14,10 +14,13 @@ import logging
 from dateutil.relativedelta import relativedelta
 import re
 
+
 # Initialize logger
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+dynamodb = boto3.resource('dynamodb')
+sqs = boto3.client('sqs')
 
 def get_serpapi_secret():
     """
@@ -116,54 +119,73 @@ def convert_relative_date_to_actual(input_date: str) -> str:
             return None
 
 
-def store_news(news_results, table, company_name):
+def send_to_sqs(queue_url, message_body):
     """
-    Store the fetched news items in the DynamoDB table.
+    Send message to SQS queue.
+    """    
+    try:
+        response = sqs.send_message(QueueUrl=queue_url, MessageBody=json.dumps(message_body))
+        logger.info(f"Message sent to SQS with message ID: {response['MessageId']}")
+    except Exception as e:
+        logger.error(f"Failed to send message to SQS: {e}")
+
+
+def store_in_dynamodb(data, table):
+    """
+    Store the fetched news items in the DynamoDB table with conditional writes to prevent duplicates.
+    """
+    try:
+        response = table.put_item(
+            Item=data,
+            ConditionExpression='attribute_not_exists(company_name_link_date)'
+        )
+
+        logger.info(f"Data stored in DynamoDB successfully for {data['issuer_name']}")
+        return True
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+            logger.info(f"Data already exists, skipped: {data['company_name_link_date']}")
+            return False
+        else:
+            logger.error(f"Error storing news data in DynamoDB for {data['issuer_name']}: {e}")
+            return False
+
+
+def process_news(news_results, issuer_name, sqs_url, dynamodb_table):
+    """
+    Process multiple news_results: check existence, store new in S3, and send to SQS.
     """
     for item in news_results:
         try:
-            date = convert_relative_date_to_actual(item.get('date'))
-            combined_key = f"{company_name}-{item.get('link')}-{date}"
+            item['date'] = convert_relative_date_to_actual(item.get('date'))
+            item['company_name_link_date'] = f"{issuer_name}-{item.get('link')}-{item['date']}"
+            item['issuer_name'] = issuer_name
+        
+            if store_in_dynamodb(item, dynamodb_table):
+                send_to_sqs(sqs_url, {'news_item': item})
+                logger.info(f"Enqueued message for {issuer_name} in SQS")  
 
-            response = table.get_item(Key={'company_name_link_date': combined_key, 'date': date})
-
-            logger.info(f"response: {response}")
-            if 'Item' not in response:
-                table.put_item(Item={
-                    'company_name_link_date': combined_key,
-                    'issuer_name':company_name,
-                    'date': date,
-                    'position': item.get('position'),
-                    'link': item.get('link'),
-                    'title': item.get('title'),
-                    'source': item.get('source'),
-                    'snippet': item.get('snippet'),
-                    'thumbnail': item.get('thumbnail')
-                })
-                logger.info(f"news_results {item}")
-            else:
-                logger.info(f"no new news_results")
         except Exception as e:
-            logger.error(f"Error storing news item in DynamoDB for {company_name}: {e}")
-
+            logger.error(f"Error processing news for {issuer_name}: {e}")
 
 def handler(event, context):
-
     serpapi_secret_key = json.loads(get_serpapi_secret())
 
-    dynamodb = boto3.resource('dynamodb')
-    news_table = dynamodb.Table(os.environ['NEWS_TABLE'])
-
-
-    # Each record is one SQS message to parse
-    for record in event['Records']: 
-        message_body = json.loads(record['body']) # body is the actual content of the message that is enqueued in the parent Lambda function
-        company_name = message_body['issuer_name']
+    sqs_url = os.environ['LLM_CONSUMER_QUEUE_URL']
+    dynamodb_table = dynamodb.Table(os.environ['NEWS_TABLE'])
     
-        news_results = get_google_news(company_name, serpapi_secret_key)
-        logger.info(f" news_results {news_results}")
+    # Each record is one SQS message to parse
+    for record in event['Records']:
+        message_body = json.loads(record['body']) # body is the actual content of the message that is enqueued in the parent Lambda function
+        issuer_name = message_body['issuer_name']
+
+        news_results = get_google_news(issuer_name, serpapi_secret_key)
+        logger.info(f"News results for {issuer_name}: {news_results}")
         
-        store_news(news_results, news_table, company_name)
+        process_news(news_results, issuer_name, sqs_url, dynamodb_table)
+
+
+
         
 
 

@@ -34,7 +34,7 @@ The entire setup is defined and deployed using AWS CDK. See the Miro board for m
     - To deploy all stacks in the app: `cdk deploy --all`
 
 10. After deployment, a `NEWSAPIEndpoint` will be returned as output. Use it to invoke the API
-    - To run for all the companies available in `news-research-issuers-table`, run 
+    - To run for all the issuers available in an athena table, run 
         ```
         curl -X POST https://api-gateway-url/run-all
         ```
@@ -42,6 +42,12 @@ The entire setup is defined and deployed using AWS CDK. See the Miro board for m
         ```
         curl -X POST https://api-gateway-url/run-issuer -d "x"
         ```
+    - To run for all issuers available in Excel file in folder x in S3 bucket `data-science-news-issuer-list`, run 
+        ```
+        curl -X POST https://api-gateway-url/run-s3 -d "x"
+        ```
+
+11. The news articles exist as Parquet files in S3 bucket `data-science-news-output`
 
 
 

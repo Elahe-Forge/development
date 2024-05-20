@@ -71,7 +71,7 @@ def process_s3_event(event):
                 issuer_name = json_content.get('name', 'Name not found')
                 logger.info(f"new issuer created: {issuer_name}") 
 
-                payload = {'company_name': issuer_name}
+                payload = {'issuer_name': issuer_name}
                 send_message_to_sqs(payload)
                 logger.info(f"Enqueued message for {issuer_name} in SQS")             
             except Exception as e:
@@ -106,7 +106,7 @@ def process_run_all(event):
     athena_query = f"""
         SELECT name
         FROM {athena_table}
-        LIMIT 100
+        LIMIT 10
     """
 
     query_result = query_athena_and_wait_for_results(athena_query, athena_database, athena_output_location)
@@ -116,7 +116,7 @@ def process_run_all(event):
         issuer_name = row['Data'][0]['VarCharValue']
         logger.info(f"issuer_name: {issuer_name}") 
         try:
-            payload = {'company_name': issuer_name}
+            payload = {'issuer_name': issuer_name}
             send_message_to_sqs(payload)
             issuer_count += 1
             logger.info(f"Enqueued message for {issuer_name} in SQS")
@@ -133,7 +133,7 @@ def process_run_issuer(event):
     issuer_name = event.get('body', '').strip()  # Extract issuer from the body
     if issuer_name:
         try:
-            payload = {'company_name': issuer_name}
+            payload = {'issuer_name': issuer_name}
             send_message_to_sqs(payload)
             logger.info(f"Enqueued message for {issuer_name} in SQS")
         except Exception as e:
@@ -153,14 +153,15 @@ def process_run_s3(event):
     s3_client = boto3.client('s3')
     s3_bucket = os.environ['S3_EXCEL_SHEET_LOCATION']
     
-    # ToDo: this logic should be modified
-    s3_key_prefix = '04-23-24/'  
+    s3_key_prefix = event.get('body', '').strip()  # Extract folder name from the body
+    # 'test-05-15-24/'   
 
     # List objects in the specified folder or the entire bucket
     response = s3_client.list_objects_v2(Bucket=s3_bucket, Prefix=s3_key_prefix)
     # Check if any objects are found
     if 'Contents' in response:
         try:
+            issuer_count = 0
             for item in response['Contents']:
                 key = item['Key']
                 if key.endswith('.xlsx'):  # Ensure the file is an Excel file
@@ -185,7 +186,7 @@ def process_run_s3(event):
             logger.error(f'Error processing files: {str(e)}')
         return {
                 'statusCode': 200,
-                'body': json.dumps(f'Enqueued message for {issuer_name} in SQS')
+                'body': json.dumps(f'Enqueued message for {issuer_count} in SQS')
             }
     else:
         return {

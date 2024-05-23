@@ -11,9 +11,13 @@ The entire setup is defined and deployed using AWS CDK. See the Miro board for m
     - AWS CDK is developed in Node.js, so you need to install Node.js and npm.
 
 3. Install AWS Command Line Interface (CLI)
-    - Once installed, configure it by running `aws configure` in your terminal.
+    - Once installed, configure it by running:
+        - non-production: `aws configure --profile dev`
+        -  production: `aws configure --profile prod`
+        
     - Enter your AWS Access Key ID, Secret Access Key, default region name, and default output format. These credentials are available in your AWS Management Console under IAM (Identity and Access Management).
     - Add `AdministratorAccess` in your user's permission policy.
+    
 
 4. Clone the Repository
 
@@ -29,31 +33,31 @@ The entire setup is defined and deployed using AWS CDK. See the Miro board for m
 8. Make sure the Docker is up and running
 
 9. Deploy the Stack
-    - To deploy a specific stack: `cdk deploy news-research`
-    - To deploy multiple specific stacks: `cdk deploy news-research news-evaluation`
-    - To deploy all stacks in the app: `cdk deploy --all`
+    - Deploy to Development Environment: `./deploy-dev.sh`
+    - Deploy to Production Environment: `./deploy-prod.sh`
 
-10. After deployment, a `NEWSAPIEndpoint` will be returned as output. Use it to invoke the API
+10. After deployment, a `NEWSAPIEndpoint` will be returned as `Output`. Use it to invoke the API
     - To run for all the issuers available in an athena table, run 
         ```
-        curl -X POST https://api-gateway-url/run-all
+        curl -X POST https://api-gateway-url/prod/run-all
         ```
     - To run for a specific issuer x, run 
         ```
-        curl -X POST https://api-gateway-url/run-issuer -d "x"
+        curl -X POST https://api-gateway-url/prod/run-issuer -d "x"
         ```
     - To run for all issuers available in Excel file in folder x in S3 bucket `data-science-news-issuer-list`, run 
         ```
-        curl -X POST https://api-gateway-url/run-s3 -d "x"
+        curl -X POST https://api-gateway-url/prod/run-s3 -d "x"
         ```
 
-11. The news articles exist as Parquet files in S3 bucket `data-science-news-output`
+11. The news articles will be published as Parquet files in S3 bucket `data-science-news-output`
 
 
 
 ## Useful commands
 
- * `cdk ls`          list all stacks in the app
+ * `cat ~/.aws/credentials`  lists the credentials set for each profile:
+ * `cdk ls`          lists all stacks in the app
  * `cdk synth`       emits the synthesized CloudFormation template
  * `cdk deploy`      deploy this stack to your default AWS account/region
  * `cdk diff`        compare deployed stack with current state

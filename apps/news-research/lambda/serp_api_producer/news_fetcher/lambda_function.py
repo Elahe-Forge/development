@@ -52,16 +52,21 @@ def get_serpapi_secret():
     return secret
 
 
-def get_google_news(issuer_name, secret):
+def get_google_news(issuer_name, number_of_articles, secret):
     """
     Fetch news for each company using SerpAPI.
     """
     try:
         
         params = {
+            "engine":"google",
+            "google_domain":"google.com",
             "q":  issuer_name + " company",
             "tbm": "nws",
-            "num": 3,
+            "num": number_of_articles,
+            # "as_dt":"i",
+            # "as_sitesearch":"x.com",
+            "as_qdr":"y", # last year
             "api_key": secret['SERPAPI_API_KEY']
         }
         search = GoogleSearch(params)
@@ -151,7 +156,7 @@ def store_in_dynamodb(data, table):
             return False
 
 
-def process_news(news_results, issuer_name, sqs_url, dynamodb_table):
+def process_news(news_results, issuer_name, sqs_url, dynamodb_table, get_summary):
     """
     Process multiple news_results: check existence, store new in S3, and send to SQS.
     """
@@ -162,7 +167,7 @@ def process_news(news_results, issuer_name, sqs_url, dynamodb_table):
             item['issuer_name'] = issuer_name
         
             if store_in_dynamodb(item, dynamodb_table):
-                send_to_sqs(sqs_url, {'news_item': item})
+                send_to_sqs(sqs_url, {'news_item': item, 'get_summary': get_summary})
                 logger.info(f"Enqueued message for {issuer_name} in SQS")  
 
         except Exception as e:
@@ -178,11 +183,13 @@ def handler(event, context):
     for record in event['Records']:
         message_body = json.loads(record['body']) # body is the actual content of the message that is enqueued in the parent Lambda function
         issuer_name = message_body['issuer_name']
+        number_of_articles = message_body['number_of_articles']
+        get_summary = message_body['get_summary'] 
 
-        news_results = get_google_news(issuer_name, serpapi_secret_key)
+        news_results = get_google_news(issuer_name, number_of_articles, serpapi_secret_key)
         logger.info(f"News results for {issuer_name}: {news_results}")
         
-        process_news(news_results, issuer_name, sqs_url, dynamodb_table)
+        process_news(news_results, issuer_name, sqs_url, dynamodb_table, get_summary)
 
 
 

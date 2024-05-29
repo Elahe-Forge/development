@@ -32,7 +32,14 @@ def process_records(records, metrics, llm_processor, model_name, model_version, 
         try:
             raw_news_text = get_raw_news_text(news_record['link'])
             if raw_news_text:
-                results = {}
+                results = {
+                    "summary": "",
+                    "reliability": "",
+                    "sentiment": "",
+                    "relevance": "",
+                    "controversy": "",
+                    "tags": ""
+                }
                 for metric in metrics:
                     result = llm_processor.process_metric(metric, raw_news_text, source=news_record.get('source', ''))
                     results[metric] = result
@@ -116,7 +123,7 @@ def handler(event, context):
     model_version = os.environ['MODEL_VERSION']
     model_handle = f"{model_name}-{model_version}"
 
-    metrics = ["summary", "reliability", "sentiment", "relevance", "controversy", "tags"]
+    metrics = ["reliability", "sentiment", "relevance", "controversy", "tags"]
     
     # Initialize the appropriate LLM processor based on the model_name
     llm_processor = initialize_llm_processor(model_name, model_handle)
@@ -124,6 +131,9 @@ def handler(event, context):
     for record in event['Records']:
         logger.info(f"Record: '{record}'")
         message_body = json.loads(record['body'])
+        get_summary = message_body['get_summary'] 
+        if get_summary:
+            metrics.insert(0, "summary") 
         process_records([message_body['news_item']], metrics, llm_processor, model_name, model_version, s3_bucket)
         
 

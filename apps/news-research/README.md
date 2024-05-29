@@ -36,19 +36,20 @@ The entire setup is defined and deployed using AWS CDK. See the Miro board for m
     - Deploy to Development Environment: `./deploy-dev.sh`
     - Deploy to Production Environment: `./deploy-prod.sh`
 
-10. After deployment, a `NEWSAPIEndpoint` will be returned as `Output`. Use it to invoke the API
+10. After deployment, a `NEWSAPIEndpoint` will be returned as `Output`. Use it to invoke the API. You can also customize (optional) the number of news articles (default is 10) and getting the summary (default is true).
     - To run for all the issuers available in an athena table, run 
         ```
-        curl -X POST https://api-gateway-url/prod/run-all
+        curl -X POST "https://api-gateway-url/prod/run-all?number_of_articles=10&get_summary=true"
         ```
     - To run for a specific issuer x, run 
         ```
-        curl -X POST https://api-gateway-url/prod/run-issuer -d "x"
+        curl -X POST "https://api-gateway-url/prod/run-issuer?number_of_articles=10&get_summary=true" -d "x"
         ```
     - To run for all issuers available in Excel file in folder x in S3 bucket `data-science-news-issuer-list`, run 
         ```
-        curl -X POST https://api-gateway-url/prod/run-s3 -d "x"
+        curl -X POST "https://api-gateway-url/prod/run-s3?number_of_articles=10&get_summary=true" -d "x"
         ```
+
 
 11. The news articles will be published as Parquet files in S3 bucket `data-science-news-output`
 

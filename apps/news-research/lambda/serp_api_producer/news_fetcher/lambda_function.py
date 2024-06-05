@@ -156,7 +156,7 @@ def store_in_dynamodb(data, table):
             return False
 
 
-def process_news(news_results, issuer_name, sqs_url, dynamodb_table, get_summary):
+def process_news(news_results, issuer_name, sqs_url, dynamodb_table, get_summary, triggered_by):
     """
     Process multiple news_results: check existence, store new in S3, and send to SQS.
     """
@@ -165,9 +165,11 @@ def process_news(news_results, issuer_name, sqs_url, dynamodb_table, get_summary
             item['date'] = convert_relative_date_to_actual(item.get('date'))
             item['company_name_link_date'] = f"{issuer_name}-{item.get('link')}-{item['date']}"
             item['issuer_name'] = issuer_name
-        
+            item['get_summary'] = get_summary
+            item['triggered_by'] = triggered_by
+
             if store_in_dynamodb(item, dynamodb_table):
-                send_to_sqs(sqs_url, {'news_item': item, 'get_summary': get_summary})
+                send_to_sqs(sqs_url, {'news_item': item})
                 logger.info(f"Enqueued message for {issuer_name} in SQS")  
 
         except Exception as e:
@@ -185,11 +187,12 @@ def handler(event, context):
         issuer_name = message_body['issuer_name']
         number_of_articles = message_body['number_of_articles']
         get_summary = message_body['get_summary'] 
+        triggered_by = message_body['triggered_by']
 
         news_results = get_google_news(issuer_name, number_of_articles, serpapi_secret_key)
         logger.info(f"News results for {issuer_name}: {news_results}")
         
-        process_news(news_results, issuer_name, sqs_url, dynamodb_table, get_summary)
+        process_news(news_results, issuer_name, sqs_url, dynamodb_table, get_summary, triggered_by)
 
 
 

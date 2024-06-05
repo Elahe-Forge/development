@@ -11,7 +11,10 @@ from aws_cdk import (
     aws_ecr_assets,
     aws_iam,
     aws_s3, 
-    aws_s3_notifications
+    aws_s3_notifications,
+    CfnOutput,
+    aws_events,
+    aws_events_targets
 )
 from constructs import Construct
 import os
@@ -167,7 +170,7 @@ class NewsResearchStack(Stack):
                 'ATHENA_TABLE': athena_table, 
                 'S3_EXCEL_SHEET_LOCATION': news_input_location,
                 'S3_OUTPUT_LOCATION': s3_athena_output_location,
-                'DEFAULT_NUMBER_OF_ARTICLES': '10',
+                'DEFAULT_NUMBER_OF_ARTICLES': '5',
                 'DEFAULT_GET_SUMMARY': 'true'
           },
           function_name = f"NewsEndpointsFunction-{env_name}",
@@ -255,7 +258,7 @@ class NewsResearchStack(Stack):
 
 
         # Define the IAM role for news_consumer Lambda
-        lambda_role = aws_iam.Role(self, "LambdaExecutionRole",
+        lambda_role = aws_iam.Role(self, "NewsLambdaExecutionRole",
                                    assumed_by=aws_iam.ServicePrincipal("lambda.amazonaws.com"),
                                    managed_policies=[
                                        aws_iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole"),
@@ -313,4 +316,96 @@ class NewsResearchStack(Stack):
 
         secret_manager = aws_secretsmanager.Secret.from_secret_complete_arn(self, 'data-science-and-ml-models/openai', openai_api_key)
         secret_manager.grant_read(news_consumer_lambda)
+
+        # Output the API Gateway URL
+        output_api_url = CfnOutput(
+            self, "NewsApiURL",
+            value=api.url,
+            description="The URL of the News API Gateway"
+        )
+
+        # If prod, schedule weekly run + weekly email
+        if env_name == 'prod': 
+
+            # IAM Role for EventBridge to Invoke API Gateway
+            eventbridge_role = aws_iam.Role(
+                self, "NewsEventBridgeApiGatewayRole",
+                assumed_by=aws_iam.ServicePrincipal("events.amazonaws.com"),
+                inline_policies={
+                    "InvokeApiPolicy": aws_iam.PolicyDocument(
+                        statements=[
+                            aws_iam.PolicyStatement(
+                                actions=["execute-api:Invoke"],
+                                resources=[api.arn_for_execute_api("*/*/*")],  
+                                effect=aws_iam.Effect.ALLOW
+                            )
+                        ]
+                    )
+                }
+            )
+
+            # EventBridge Rule to trigger the API Gateway
+            eventbridge_rule = aws_events.Rule(
+                self, "NewsApiTriggerRule",
+                schedule=aws_events.Schedule.cron(minute="0", hour="17", month="*", week_day="MON")  
+                # schedule=aws_events.Schedule.expression("rate(2 minutes)") 
+            )
+            
+            eventbridge_rule.add_target(aws_events_targets.ApiGateway(
+                rest_api=api,
+                stage="prod",
+                method="POST",
+                path="/run-s3",  
+                header_parameters={"Content-Type": "application/json"},
+                post_body=aws_events.RuleTargetInput.from_text("05-21-24/"),
+                event_role=eventbridge_role,
+                # retry_attempts=0,
+                # dead_letter_queue=dlq
+            ))
+
+            # Lambda to send emails with latest news
+            email_producer_ecr_image = aws_lambda.EcrImageCode.from_asset_image(
+                    directory = os.path.join(os.getcwd(), "lambda/email_producer"),
+                    platform = aws_ecr_assets.Platform.LINUX_AMD64,
+            )
+            
+            email_producer_lambda = aws_lambda.Function(self,
+            id            = "NewsEmailProducerLambdaFunction",
+            description   = "NewsEmailProducerLambdaFunction",
+            code          = email_producer_ecr_image,
+            handler       = aws_lambda.Handler.FROM_IMAGE,
+            runtime       = aws_lambda.Runtime.FROM_IMAGE,
+            environment  ={
+                    'S3_NEWS_OUTPUT_LOCATION': news_output_location,
+            },
+            function_name = f"NewsEmailProducerFunction-{env_name}",
+            memory_size   = 1024, 
+            reserved_concurrent_executions = 10,
+            timeout       = Duration.seconds(900),
+            )
+
+            news_output_bucket = aws_s3.Bucket.from_bucket_name(
+                self, f"S3NewsOutputLocation-{env_name}",
+                bucket_name=news_output_location
+            )
+
+            # Grant the Lambda function permissions to read from the S3 bucket
+            news_output_bucket.grant_read(email_producer_lambda)
+
+            # SES permissions
+            email_producer_lambda.add_to_role_policy(
+                aws_iam.PolicyStatement(
+                    actions=["ses:SendRawEmail"],
+                    resources=["*"]
+                )
+            )
+
+            # EventBridge rule for sending email
+            email_rule = aws_events.Rule(
+                self, "NewsEmailRule",
+                # schedule=aws_events.Schedule.cron(minute="0", hour="17", month="*", week_day="TUE") 
+                schedule=aws_events.Schedule.expression("rate(2 minutes)") 
+            )
+            email_rule.add_target(aws_events_targets.LambdaFunction(email_producer_lambda))
+
 

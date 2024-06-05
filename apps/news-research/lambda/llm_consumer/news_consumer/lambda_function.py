@@ -26,10 +26,15 @@ s3_client = boto3.client('s3')
 lambda_client = boto3.client('lambda')
 
 
-def process_records(records, metrics, llm_processor, model_name, model_version, s3_bucket):
+def process_records(records, llm_processor, model_name, model_version, s3_bucket):
     """ Process each news record and persist results. """
+    
+    metrics = ["reliability", "sentiment", "relevance", "controversy", "tags"]
+
     for news_record in records:
         try:
+            if news_record['get_summary']:
+                metrics.insert(0, "summary") 
             raw_news_text = get_raw_news_text(news_record['link'])
             if raw_news_text:
                 results = {
@@ -41,7 +46,7 @@ def process_records(records, metrics, llm_processor, model_name, model_version, 
                     "tags": ""
                 }
                 for metric in metrics:
-                    result = llm_processor.process_metric(metric, raw_news_text, source=news_record.get('source', ''))
+                    result = llm_processor.process_metric(metric, raw_news_text, source=news_record.get('link', ''))
                     results[metric] = result
             
                 news_record.update(results)
@@ -97,7 +102,7 @@ def persist_news_analysis(news_records, s3_bucket, model_handle):
             parquet_buffer = io.BytesIO()
             df.to_parquet(parquet_buffer, index=False)
 
-            s3_prefix = model_handle + "-" + timestamp.strftime("%Y%m%d")  
+            s3_prefix = model_handle + "-" + timestamp.strftime("%Y%m%d") + news_records['triggered_by']
             s3_object_key = f'news-articles/{s3_prefix}/{issuer_name}/news_record_{timestamp.strftime("%Y%m%d%H%M%S%f")}_{unique_id}.parquet'
             s3_client.put_object(Bucket=s3_bucket, Key=s3_object_key, Body=parquet_buffer.getvalue())
             
@@ -122,8 +127,6 @@ def handler(event, context):
     model_name = os.environ['MODEL_NAME']
     model_version = os.environ['MODEL_VERSION']
     model_handle = f"{model_name}-{model_version}"
-
-    metrics = ["reliability", "sentiment", "relevance", "controversy", "tags"]
     
     # Initialize the appropriate LLM processor based on the model_name
     llm_processor = initialize_llm_processor(model_name, model_handle)
@@ -131,10 +134,8 @@ def handler(event, context):
     for record in event['Records']:
         logger.info(f"Record: '{record}'")
         message_body = json.loads(record['body'])
-        get_summary = message_body['get_summary'] 
-        if get_summary:
-            metrics.insert(0, "summary") 
-        process_records([message_body['news_item']], metrics, llm_processor, model_name, model_version, s3_bucket)
+        
+        process_records([message_body['news_item']], llm_processor, model_name, model_version, s3_bucket)
         
 
     return {'status': 'Processing complete'}

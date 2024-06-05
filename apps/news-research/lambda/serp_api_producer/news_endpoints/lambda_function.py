@@ -15,6 +15,10 @@ from io import BytesIO
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+default_number_of_articles = os.getenv('DEFAULT_NUMBER_OF_ARTICLES')
+default_get_summary = os.getenv('DEFAULT_GET_SUMMARY')
+
+
 def query_athena_and_wait_for_results(query, database, output_location):
     """
     Executes an SQL query on Athena and waits for the result.
@@ -62,7 +66,7 @@ def process_s3_event(event):
                 issuer_name = json_content.get('name', 'Name not found')
                 logger.info(f"new issuer created: {issuer_name}") 
 
-                payload = {'issuer_name': issuer_name}
+                payload = {'issuer_name': issuer_name, 'number_of_articles': default_number_of_articles, 'get_summary': default_get_summary, 'triggered_by': 's3'}
                 send_message_to_sqs(payload)
                 logger.info(f"Enqueued message for {issuer_name} in SQS")             
             except Exception as e:
@@ -87,8 +91,8 @@ def validate_positive_integer(value, default):
 def process_api_gateway_event(event):
     # Determine the number_of_articles and whether to get summary of articles
     query_params = event.get('queryStringParameters') or {}
-    number_of_articles = validate_positive_integer(query_params.get('number_of_articles'), int(os.getenv('DEFAULT_NUMBER_OF_ARTICLES')))
-    get_summary = query_params.get('get_summary', os.getenv('DEFAULT_GET_SUMMARY')).lower() == 'true'
+    number_of_articles = validate_positive_integer(query_params.get('number_of_articles'), default_number_of_articles)
+    get_summary = query_params.get('get_summary', default_get_summary).lower() == 'true'
 
     # Determine the type of command (run-all or run-issuer)
     path = event.get('resource')
@@ -97,8 +101,9 @@ def process_api_gateway_event(event):
     elif path == '/run-issuer':
         return process_run_issuer(event, number_of_articles, get_summary)
     elif path == '/run-s3':
-        return process_run_s3(event, number_of_articles, get_summary)
+        return process_run_s3_excel(event, number_of_articles, get_summary)
     else:
+        logger.info("Invalid command.")
         return {
             'statusCode': 400,
             'body': json.dumps('Invalid command.')
@@ -122,7 +127,7 @@ def process_run_all(event, number_of_articles, get_summary):
         issuer_name = row['Data'][0]['VarCharValue']
         logger.info(f"issuer_name: {issuer_name}") 
         try:
-            payload = {'issuer_name': issuer_name, 'number_of_articles': number_of_articles, 'get_summary': get_summary}
+            payload = {'issuer_name': issuer_name, 'number_of_articles': number_of_articles, 'get_summary': get_summary, 'triggered_by': 'api'}
             send_message_to_sqs(payload)
             issuer_count += 1
             logger.info(f"Enqueued message for {issuer_name} in SQS")
@@ -139,7 +144,7 @@ def process_run_issuer(event, number_of_articles, get_summary):
     issuer_name = event.get('body', '').strip()  # Extract issuer from the body
     if issuer_name:
         try:
-            payload = {'issuer_name': issuer_name, 'number_of_articles': number_of_articles, 'get_summary': get_summary}
+            payload = {'issuer_name': issuer_name, 'number_of_articles': number_of_articles, 'get_summary': get_summary, 'triggered_by': 'api'}
             send_message_to_sqs(payload)
             logger.info(f"Enqueued message for {issuer_name} in SQS")
         except Exception as e:
@@ -155,12 +160,11 @@ def process_run_issuer(event, number_of_articles, get_summary):
         }
     
 
-def process_run_s3(event, number_of_articles, get_summary):
-    
+def process_run_s3_excel(event, number_of_articles, get_summary):
     s3_client = boto3.client('s3')
     s3_bucket = os.environ['S3_EXCEL_SHEET_LOCATION']
     
-    s3_key_prefix = event.get('body', '').strip()  # Extract folder name from the body
+    s3_key_prefix = event.get('body', '').strip().strip('"')  # Extract folder name from the body
     # 'test-05-15-24/'   
 
     # List objects in the specified folder or the entire bucket
@@ -182,7 +186,7 @@ def process_run_s3(event, number_of_articles, get_summary):
                     # Extract the 'issuerKey' column, assuming it exists
                     if 'issuerKey' in df.columns:
                         for issuer_name in df['issuerKey'].dropna().unique(): 
-                            payload = {'issuer_name': issuer_name, 'number_of_articles': number_of_articles, 'get_summary': get_summary}
+                            payload = {'issuer_name': issuer_name, 'number_of_articles': number_of_articles, 'get_summary': get_summary, 'triggered_by': 'api'}
                             send_message_to_sqs(payload)
                             issuer_count += 1
                             logger.info(f"Enqueued message for {issuer_name} in SQS")
@@ -196,6 +200,7 @@ def process_run_s3(event, number_of_articles, get_summary):
                 'body': json.dumps(f'Enqueued message for {issuer_count} in SQS')
             }
     else:
+        logger.info("No objects found with the specified S3 bucket.")
         return {
             'statusCode': 400,
             'body': json.dumps('No objects found with the specified S3 bucket.')

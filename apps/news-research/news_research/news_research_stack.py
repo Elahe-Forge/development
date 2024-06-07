@@ -287,6 +287,7 @@ class NewsResearchStack(Stack):
         )
 
         news_output_location = "data-science-news-output" if env_name == 'dev' else "data-science-news-output-prod"
+        news_prompts_location = "data-science-news-prompts" if env_name == 'dev' else "data-science-news-prompts-prod"
 
         news_consumer_lambda = aws_lambda.Function(self,
           id            = "NewsConsumerLambdaFunction",
@@ -296,9 +297,11 @@ class NewsResearchStack(Stack):
           runtime       = aws_lambda.Runtime.FROM_IMAGE,
           role=lambda_role,
           environment   = {
-                'S3_BUCKET': news_output_location,
+                'S3_NEWS_OUTPUT_BUCKET': news_output_location,
                 'MODEL_NAME': 'anthropic.claude', #'gpt'
-                'MODEL_VERSION': 'v2' #'3.5-turbo'
+                'MODEL_VERSION': 'v2', #'3.5-turbo'
+                'S3_NEWS_PROMPTS_BUCKET': news_prompts_location,
+                'PROMPT_VERSION': 'v1'
           },
           function_name = f"NewsConsumerFunction-{env_name}",
           memory_size   = 1024, # default 128 causes memory allocation limit error

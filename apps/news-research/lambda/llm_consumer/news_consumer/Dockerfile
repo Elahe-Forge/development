@@ -9,8 +9,8 @@ RUN pip install --upgrade pip
 RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 # Copy the shared utility llm_handler.py from the llm_handler directory
-COPY llm_handler/llm_handler.py .
-COPY llm_handler/requirements.txt .
+COPY llm_lib/llm_handler/llm_handler.py .
+COPY llm_lib/llm_handler/requirements.txt .
 RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 

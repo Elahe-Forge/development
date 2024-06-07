@@ -26,7 +26,7 @@ s3_client = boto3.client('s3')
 lambda_client = boto3.client('lambda')
 
 
-def process_records(records, llm_processor, model_name, model_version, s3_bucket):
+def process_records(records, llm_processor, model_name, model_version, s3_news_output_bucket):
     """ Process each news record and persist results. """
     
     metrics = ["reliability", "sentiment", "relevance", "controversy", "tags"]
@@ -46,12 +46,12 @@ def process_records(records, llm_processor, model_name, model_version, s3_bucket
                     "tags": ""
                 }
                 for metric in metrics:
-                    result = llm_processor.process_metric(metric, raw_news_text, source=news_record.get('link', ''))
+                    result = llm_processor.process_metric(metric, raw_news_text, source=news_record.get('source', ''))
                     results[metric] = result
             
                 news_record.update(results)
                 news_record.update({'model_name': model_name, 'model_version': model_version, 'raw': raw_news_text})
-                persist_news_analysis(news_record, s3_bucket, f"{model_name}-{model_version}")
+                persist_news_analysis(news_record, s3_news_output_bucket, f"{model_name}-{model_version}")
 
         except Exception as e:
             logger.error(f'Error processing news record: {news_record}, error: {e}')
@@ -87,7 +87,7 @@ def get_raw_news_text(url : str) -> str: # throws http error if problems w/reque
         return None
 
 
-def persist_news_analysis(news_records, s3_bucket, model_handle):
+def persist_news_analysis(news_records, s3_news_output_bucket, model_handle):
     """ 
     Persist news analysis to S3 as Parquet. 
     """
@@ -104,38 +104,40 @@ def persist_news_analysis(news_records, s3_bucket, model_handle):
 
             s3_prefix = model_handle + "-" + timestamp.strftime("%Y%m%d") + news_records['triggered_by']
             s3_object_key = f'news-articles/{s3_prefix}/{issuer_name}/news_record_{timestamp.strftime("%Y%m%d%H%M%S%f")}_{unique_id}.parquet'
-            s3_client.put_object(Bucket=s3_bucket, Key=s3_object_key, Body=parquet_buffer.getvalue())
+            s3_client.put_object(Bucket=s3_news_output_bucket, Key=s3_object_key, Body=parquet_buffer.getvalue())
             
-            logger.info(f"Persisted record for issuer '{issuer_name}' to S3 bucket '{s3_bucket}' with key '{s3_object_key}'")
+            logger.info(f"Persisted record for issuer '{issuer_name}' to S3 bucket '{s3_news_output_bucket}' with key '{s3_object_key}'")
         except ClientError as e:
-            logger.error(f"Failed to persist record for issuer '{issuer_name}' to S3 bucket '{s3_bucket}': {e}")
+            logger.error(f"Failed to persist record for issuer '{issuer_name}' to S3 bucket '{s3_news_output_bucket}': {e}")
         except Exception as e:
             logger.error(f"Unexpected error occurred while persisting record for issuer '{issuer_name}': {e}")
     
 
 
-def initialize_llm_processor(model_name, model_handle):
+def initialize_llm_processor(model_name, model_handle, s3_news_prompts_bucket, prompt_version):
     if model_name.lower() == 'openai':
-        return GPTProcessor(model_handle)
+        return GPTProcessor(model_handle, s3_news_prompts_bucket, prompt_version)
     elif model_name.lower() == 'anthropic.claude':
-        return ClaudeProcessor(model_handle)
+        return ClaudeProcessor(model_handle, s3_news_prompts_bucket, prompt_version)
     else:
         raise ValueError(f'Unsupported LLM type: {model_name}') 
 
 def handler(event, context):
-    s3_bucket = os.environ['S3_BUCKET']
+    s3_news_output_bucket = os.environ['S3_NEWS_OUTPUT_BUCKET']
     model_name = os.environ['MODEL_NAME']
     model_version = os.environ['MODEL_VERSION']
     model_handle = f"{model_name}-{model_version}"
+    s3_news_prompts_bucket = os.environ['S3_NEWS_PROMPTS_BUCKET'] 
+    prompt_version = os.environ['PROMPT_VERSION']
     
     # Initialize the appropriate LLM processor based on the model_name
-    llm_processor = initialize_llm_processor(model_name, model_handle)
+    llm_processor = initialize_llm_processor(model_name, model_handle, s3_news_prompts_bucket, prompt_version)
 
     for record in event['Records']:
         logger.info(f"Record: '{record}'")
         message_body = json.loads(record['body'])
         
-        process_records([message_body['news_item']], llm_processor, model_name, model_version, s3_bucket)
+        process_records([message_body['news_item']], llm_processor, model_name, model_version, s3_news_output_bucket)
         
 
     return {'status': 'Processing complete'}

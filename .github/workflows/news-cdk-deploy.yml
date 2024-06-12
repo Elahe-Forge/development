@@ -1,0 +1,181 @@
+name: News CDK Deploy
+
+on:
+  push:
+    branches:
+      - development
+  workflow_dispatch: # Allows manual dispatch as well
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    environment: DEV
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        
+
+      - name: Set up Python
+      
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
+          sudo installer -pkg AWSCLIV2.pkg -target /
+        working-directory: apps/news-research
+
+      - name: Configure AWS CLI for DEV
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region ${{ secrets.AWS_REGION_DEV }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION_DEV }}
+        working-directory: apps/news-research
+
+      - name: Create and activate virtual environment
+        run: |
+          python3 -m venv .env
+          source .env/bin/activate
+        working-directory: apps/news-research
+
+      - name: Install Python dependencies
+        run: |
+          ./.env/bin/pip install -r requirements.txt
+        working-directory: apps/news-research
+
+      - name: Install CDK dependencies
+        run: |
+          npm install
+        working-directory: apps/news-research
+
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+        working-directory: apps/news-research
+
+      - name: Bootstrap CDK environment
+        run: cdk bootstrap
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION_DEV }}
+        working-directory: apps/news-research
+
+      - name: Deploy CDK stack to DEV
+        run: ./deploy-dev.sh
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION_DEV }}
+        working-directory: apps/news-research
+
+      - name: Upload JSON files to S3
+        run: |
+          for file in $(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'llm_lib/prompts/'); do
+            if [[ $file == *.json ]]; then
+              s3_path="s3://data-science-news-prompts/${file#llm_lib/prompts/}"
+              aws s3 cp $file $s3_path
+            fi
+          done
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION_DEV }}
+        working-directory: apps/news-research
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    environment: PROD
+    needs: deploy-dev
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
+          sudo installer -pkg AWSCLIV2.pkg -target /
+        working-directory: apps/news-research
+
+      - name: Configure AWS CLI for PROD
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region ${{ secrets.AWS_REGION_PROD }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION_PROD }}
+        working-directory: apps/news-research
+
+      - name: Create and activate virtual environment
+        run: |
+          python3 -m venv .env
+          source .env/bin/activate
+        working-directory: apps/news-research
+
+      - name: Install Python dependencies
+        run: |
+          ./.env/bin/pip install -r requirements.txt
+        working-directory: apps/news-research
+
+      - name: Install CDK dependencies
+        run: |
+          npm install
+        working-directory: apps/news-research
+
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+        working-directory: apps/news-research
+
+      - name: Bootstrap CDK environment
+        run: cdk bootstrap
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION_PROD }}
+        working-directory: apps/news-research
+
+      - name: Deploy CDK stack to PROD
+        run: ./deploy-prod.sh
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION_PROD }}
+        working-directory: apps/news-research
+          
+      - name: Upload JSON files to S3
+        run: |
+            for file in $(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'llm_lib/prompts/'); do
+              if [[ $file == *.json ]]; then
+                s3_path="s3://data-science-news-prompts-prod/${file#llm_lib/prompts/}"
+                aws s3 cp $file $s3_path
+              fi
+            done
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION_PROD }}
+        working-directory: apps/news-research

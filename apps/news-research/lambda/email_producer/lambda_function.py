@@ -19,6 +19,8 @@ def handler(event, context):
 
     s3_client = boto3.client('s3')
     ses_client = boto3.client('ses')
+    source_email = get_email_address(os.environ['SOURCE_EMAIL_PARAM'])
+    destination_emails = get_email_addresses_list(os.environ['DESTINATION_EMAIL_PARAM'])
     bucket_name = os.getenv('S3_NEWS_OUTPUT_LOCATION')
     parent_prefix = "news-articles/"
 
@@ -53,7 +55,7 @@ def handler(event, context):
     for key, dfs in data_frames.items():
         if dfs:
             combined_df = pd.concat(dfs)
-            send_email(ses_client, combined_df, key)
+            send_email(ses_client, combined_df, key, source_email, destination_emails)
 
 def collect_parquet_files(s3_client, bucket, prefix, data_frames_list):
     subfolder_pages = s3_client.get_paginator('list_objects_v2').paginate(Bucket=bucket, Prefix=prefix)
@@ -69,10 +71,7 @@ def collect_parquet_files(s3_client, bucket, prefix, data_frames_list):
                     logger.error(f"Failed to process file {item['Key']}: {str(e)}")
 
 
-
-
-def send_email(ses_client, dataframe, prefix):
-    
+def send_email(ses_client, dataframe, prefix, source_email, destination_emails):
     # Convert DataFrame to Excel for attachment
     excel_buffer = BytesIO()
     with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
@@ -85,12 +84,12 @@ def send_email(ses_client, dataframe, prefix):
     try:
         # Prepare and send the email with the attachment
         response = ses_client.send_raw_email(
-            Source='your_verified_email@example.com',
-            Destinations=['verified_recipient_email@example.com'],
+            Source=source_email,
+            Destinations=destination_emails,
             RawMessage={
                 'Data': f"""
-                From: your_verified_email@example.com
-                To: verified_recipient_email@example.com
+                From: {source_email}
+                To: {destination_emails}
                 Subject: Consolidated Data Report for {prefix}
                 MIME-Version: 1.0
                 Content-Type: multipart/mixed; boundary="simple-boundary"
@@ -114,3 +113,14 @@ def send_email(ses_client, dataframe, prefix):
 
     except Exception as e:
         logger.error(f"Failed to send email for {prefix}: {str(e)}")
+
+
+def get_email_address(parameter_name):
+    client = boto3.client('ssm')
+    response = client.get_parameter(Name=parameter_name, WithDecryption=True)
+    return response['Parameter']['Value']
+
+def get_email_addresses_list(parameter_name):
+    client = boto3.client('ssm')
+    response = client.get_parameter(Name=parameter_name, WithDecryption=True)
+    return response['Parameter']['Value'].split(',')

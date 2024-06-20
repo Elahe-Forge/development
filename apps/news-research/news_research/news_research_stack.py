@@ -14,7 +14,11 @@ from aws_cdk import (
     aws_s3_notifications,
     CfnOutput,
     aws_events,
-    aws_events_targets
+    aws_events_targets,
+    aws_cloudwatch,
+    aws_sns,
+    aws_sns_subscriptions,
+    aws_cloudwatch_actions
 )
 from constructs import Construct
 import os
@@ -78,6 +82,9 @@ class NewsResearchStack(Stack):
                 platform = aws_ecr_assets.Platform.LINUX_AMD64
         )
 
+        # SNS topic for notifications
+        dlq_alarm_topic = aws_sns.Topic(self, "NewsDLQAlarmTopic", topic_name=f"NewsDLQAlarmTopic-{env_name}")
+
         # Lambda function to process messages from DLQs
         dlq_handler_lambda = aws_lambda.Function(self,
             id            = "NewsDLQHandlerLambdaFunction",
@@ -87,7 +94,9 @@ class NewsResearchStack(Stack):
             runtime       = aws_lambda.Runtime.FROM_IMAGE,
             environment={
                 'ISSUER_DLQ_URL': issuer_dlq.queue_url,
-                'LLM_CONSUMER_DLQ_URL': llm_consumer_dlq.queue_url
+                'LLM_CONSUMER_DLQ_URL': llm_consumer_dlq.queue_url,
+                'EMAIL_PARAM': '/data-science-and-ml-models/email-addresses/source',
+                'SNS_TOPIC_ARN': dlq_alarm_topic.topic_arn
             },
             function_name = f"NewsDLQHandlerFunction-{env_name}",
             memory_size   = 128,
@@ -101,7 +110,38 @@ class NewsResearchStack(Stack):
 
         # Grant the Lambda function permissions to process messages from both DLQs
         issuer_dlq.grant_consume_messages(dlq_handler_lambda)
-        llm_consumer_dlq.grant_consume_messages(dlq_handler_lambda)
+        llm_consumer_dlq.grant_consume_messages(dlq_handler_lambda)        
+
+        # Add permissions for the Lambda function to access Parameter Store and SNS
+        dlq_handler_lambda.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                actions=['ssm:GetParameter', 'sns:Publish', 'sns:Subscribe'],
+                resources=[
+                    f'arn:aws:ssm:{env_region}:{env_account}:parameter/data-science-and-ml-models/email-addresses/source',
+                    dlq_alarm_topic.topic_arn
+                ]
+            )
+        )
+    
+        # CloudWatch Alarms for DLQs
+        issuer_dlq_alarm = aws_cloudwatch.Alarm(self, "NewsIssuerDLQAlarm",
+            metric=issuer_dlq.metric("ApproximateNumberOfMessagesVisible"), # When there is at least one message in the DLQ, the alarm is triggered.
+            threshold=1,
+            evaluation_periods=1,
+            alarm_description="Alarm when there are messages in the News Issuer DLQ",
+            alarm_name=f"NewsIssuerDLQAlarm-{env_name}")
+
+        llm_consumer_dlq_alarm = aws_cloudwatch.Alarm(self, "NewsLlmConsumerDLQAlarm",
+            metric=llm_consumer_dlq.metric("ApproximateNumberOfMessagesVisible"),
+            threshold=1,
+            evaluation_periods=1,
+            alarm_description="Alarm when there are messages in the News LLM Consumer DLQ",
+            alarm_name=f"NewsLlmConsumerDLQAlarm-{env_name}")
+        
+        # Add SNS actions to the alarms
+        issuer_dlq_alarm.add_alarm_action(aws_cloudwatch_actions.SnsAction(dlq_alarm_topic))
+        llm_consumer_dlq_alarm.add_alarm_action(aws_cloudwatch_actions.SnsAction(dlq_alarm_topic))
+
 
 
         news_fetcher_ecr_image = aws_lambda.EcrImageCode.from_asset_image(
@@ -380,6 +420,8 @@ class NewsResearchStack(Stack):
             runtime       = aws_lambda.Runtime.FROM_IMAGE,
             environment  ={
                     'S3_NEWS_OUTPUT_LOCATION': news_output_location,
+                    'SOURCE_EMAIL_PARAM': '/data-science-and-ml-models/email-addresses/source',
+                    'DESTINATION_EMAIL_PARAM': '/data-science-and-ml-models/email-addresses/destination',
             },
             function_name = f"NewsEmailProducerFunction-{env_name}",
             memory_size   = 1024, 
@@ -411,4 +453,14 @@ class NewsResearchStack(Stack):
             )
             email_rule.add_target(aws_events_targets.LambdaFunction(email_producer_lambda))
 
+            # Permissions to access Parameter Store
+            email_producer_lambda.add_to_role_policy(
+                aws_iam.PolicyStatement(
+                    actions=['ssm:GetParameter'],
+                    resources=[
+                        f'arn:aws:ssm:{env_region}:{env_account}:parameter/data-science-and-ml-models/email-addresses/source',
+                        f'arn:aws:ssm:{env_region}:{env_account}:parameter/data-science-and-ml-models/email-addresses/destination'
+                    ]
+                )
+            )
 

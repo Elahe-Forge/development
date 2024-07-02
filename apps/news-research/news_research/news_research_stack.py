@@ -341,7 +341,7 @@ class NewsResearchStack(Stack):
                 'MODEL_NAME': 'anthropic.claude', #'gpt'
                 'MODEL_VERSION': 'v2', #'3.5-turbo'
                 'S3_NEWS_PROMPTS_BUCKET': news_prompts_location,
-                'PROMPT_VERSION': 'v1'
+                'PROMPT_VERSION': 'v2'
           },
           function_name = f"NewsConsumerFunction-{env_name}",
           memory_size   = 1024, # default 128 causes memory allocation limit error

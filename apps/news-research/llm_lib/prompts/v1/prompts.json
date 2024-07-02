@@ -1,5 +1,6 @@
 
 {
+  "_comment": "version 1",
   "summary": "Below is the raw text content from a news article about a company. Please provide a short ~50 word summary of the contents of the article in the style of a neutral financial analyst. Do not return any text other than the summary. {content}",
   "reliability": "Given the source of an article and its contents, rate the perceived 'reliability' of the content on a scale of 1-5, where 1 is unreliable and 5 is very reliable. Very reliable content would be unbiased from a reliable major source, whereas unreliable content would be clearly biased and from low quality sources such as industry press release syndications or similar publications. Do not return anything other than a number from 1-5. source: {source} {content}",
   "sentiment": "Given the text of an article, rate the sentiment of the article from 1-5 with 1 being very negative and 5 being very positive. 3 should be neutral. Do not return any text other than the rating. {content}",

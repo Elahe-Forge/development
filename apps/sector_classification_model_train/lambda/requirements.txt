@@ -1,0 +1,4 @@
+sagemaker
+sagemaker-experiments
+boto3
+python-dotenv

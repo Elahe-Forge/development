@@ -18,7 +18,8 @@ from aws_cdk import (
     aws_cloudwatch,
     aws_sns,
     aws_sns_subscriptions,
-    aws_cloudwatch_actions
+    aws_cloudwatch_actions,
+    aws_ssm
 )
 from constructs import Construct
 import os
@@ -156,6 +157,7 @@ class NewsResearchStack(Stack):
           handler       = aws_lambda.Handler.FROM_IMAGE,
           runtime       = aws_lambda.Runtime.FROM_IMAGE,
           environment   = {
+                'ONLY_TRUSTED_SITES': 'Y', # or N
                 'NEWS_TABLE': news_table.table_name,
                 'ISSUER_QUEUE_URL': issuer_queue.queue_url,
                 'LLM_CONSUMER_QUEUE_URL': llm_consumer_queue.queue_url
@@ -187,6 +189,19 @@ class NewsResearchStack(Stack):
 
         secret_manager = aws_secretsmanager.Secret.from_secret_complete_arn(self, 'data-science-and-ml-models/serpapi_token', serpapi_api_key)
         secret_manager.grant_read(news_fetcher_lambda)
+
+        # SSM parameter with trusted sources of news
+        parameter_name = '/data-science-and-ml-models/trusted_sites'
+        trusted_sites_parameter = aws_ssm.StringParameter(self, f"NewsTrustedSitesParameter-{env_name}",
+            parameter_name=parameter_name,
+            string_value='seekingalpha.com,reuters.com,yahoo.com,finance.yahoo.com,wsj.com,theinformation.com,crunchbase.com,techcrunch.com,nytimes.com,cnbc.com,bloomberg.com,fortune.com,forbes.com,ft.com,washingtonpost.com,businessinsider.com,coindesk.com,investmentu.com,fool.com,theverge.com,marketwatch.com'  
+        )
+
+        # Grant the Lambda function read access to the SSM parameter
+        news_fetcher_lambda.add_to_role_policy(aws_iam.PolicyStatement(
+            actions=['ssm:GetParameter'],
+            resources=[trusted_sites_parameter.parameter_arn]
+        ))
 
         news_endpoints_ecr_image = aws_lambda.EcrImageCode.from_asset_image(
                 directory = os.path.join(os.getcwd(), "lambda/serp_api_producer/news_endpoints"),

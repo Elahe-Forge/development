@@ -51,26 +51,46 @@ def get_serpapi_secret():
 
     return secret
 
+def get_trusted_sites():
+    """
+    Fetch the list of trusted sources of News from SSM Parameter Store.
+    """
+    try:
+        ssm_client = boto3.client('ssm')
+        response = ssm_client.get_parameter(
+            Name='/data-science-and-ml-models/trusted_sites',
+            WithDecryption=True
+        )
+        trusted_sites = response['Parameter']['Value'].split(',')
+        return trusted_sites
+    except ClientError as e:
+        logger.error(f"Error fetching trusted sites from SSM: {e}")
+        return []
 
-def get_google_news(issuer_name, number_of_articles, secret):
+def get_google_news(issuer_name, number_of_articles, secret, only_trusted_sites):
     """
     Fetch news for each company using SerpAPI.
     """
     try:
-        
+        trusted_sites = get_trusted_sites()    
+        sites_query = " OR ".join([f"site:{site}" for site in trusted_sites])
+     
         params = {
-            "engine":"google",
-            "google_domain":"google.com",
-            "q":  issuer_name + " company",
+            "engine": "google",
+            "google_domain": "google.com",
+            "q": issuer_name + " company",
             "tbm": "nws",
             "num": number_of_articles,
-            # "as_dt":"i",
-            # "as_sitesearch":"x.com",
-            "as_qdr":"y", # last year
+            "as_qdr": "y",  # last year
             "api_key": secret['SERPAPI_API_KEY']
         }
+        
+        # Add trusted sites to the query if only_trusted_sites is 'Y'
+        if only_trusted_sites == 'Y':
+            params["q"] += f" ({sites_query})"
+        
         search = GoogleSearch(params)
-        results = search.get_dict()
+        results = search.get_dict()        
         return results.get("news_results", [])
     
     except Exception as e:
@@ -180,6 +200,7 @@ def handler(event, context):
 
     sqs_url = os.environ['LLM_CONSUMER_QUEUE_URL']
     dynamodb_table = dynamodb.Table(os.environ['NEWS_TABLE'])
+    only_trusted_sites = os.environ['ONLY_TRUSTED_SITES'] # 'Y' or 'N'
     
     # Each record is one SQS message to parse
     for record in event['Records']:
@@ -189,7 +210,7 @@ def handler(event, context):
         get_summary = message_body['get_summary'] 
         triggered_by = message_body['triggered_by']
 
-        news_results = get_google_news(issuer_name, number_of_articles, serpapi_secret_key)
+        news_results = get_google_news(issuer_name, number_of_articles, serpapi_secret_key, only_trusted_sites)
         logger.info(f"News results for {issuer_name}: {news_results}")
         
         process_news(news_results, issuer_name, sqs_url, dynamodb_table, get_summary, triggered_by)

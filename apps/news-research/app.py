@@ -17,18 +17,15 @@ bucket_name = env_context["file_assets_bucket_name"]
 team = env_context["team"]
 
 env = Environment(account=account, region=region)
+role_arn = f"arn:aws:iam::{account}:role/data-science-news-cdk"
 
-if env_name == "prod":
-    role_arn = f"arn:aws:iam::{account}:role/data-science-news-cdk"
-    synthesizer = DefaultStackSynthesizer(
-        deploy_role_arn = role_arn,
-        cloud_formation_execution_role = role_arn,
-        file_asset_publishing_role_arn = role_arn,
-        image_asset_publishing_role_arn = role_arn,
-        file_assets_bucket_name = bucket_name
-    )
-else:
-    synthesizer=DefaultStackSynthesizer(file_assets_bucket_name=bucket_name)
+synthesizer = DefaultStackSynthesizer(
+    deploy_role_arn = role_arn,
+    cloud_formation_execution_role = role_arn,
+    file_asset_publishing_role_arn = role_arn,
+    image_asset_publishing_role_arn = role_arn,
+    file_assets_bucket_name = bucket_name
+)
 
 my_stack = NewsResearchStack(app, f"data-science-news-automation-{env_name}", 
                     env_name = env_name,

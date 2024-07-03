@@ -5,7 +5,7 @@
       "dev": {
         "account": "597915789054",
         "region": "us-west-2",
-        "file_assets_bucket_name": "data-science-cdk",
+        "file_assets_bucket_name": "data-science-news-cdk-dev",
         "team": "orange"
       },
       "prod": {

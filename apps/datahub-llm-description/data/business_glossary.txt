@@ -1,0 +1,4 @@
+Business Glossary
+data-product: a derived dataset created by forge using proprietary and public data
+public-data: data available outside forge, like SEC NPORT and funding rounds
+customer-data: private data uses only internally and by brokers. 

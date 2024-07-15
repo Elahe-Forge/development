@@ -1,0 +1,60 @@
+Classification Levels
+All Forge Information is classified into one of four levels based on its sensitivity and the risks associated with disclosure: Confidential, Restricted, Internal and Public.  The classification level determines the minimum security protections and handling that must be used for the information. When combining information, the classification level of the resulting information must be re-evaluated independently of the source information’s classification.
+
+The classifications levels are:
+
+Confidential Information Classification (AKA Confidential)
+Confidential information is the most sensitive data across the Forge Group. Information classified as Confidential spans Forge’s intellectual property, proprietary methods for providing business line services, legal and regulatory sensitive information, user authenticators, and merger and acquisition activities, and other information that is expected to be limited to authorized workforce members on a need-to-know basis only.
+Sharing of Confidential information within Forge may be permissible, if necessary to meet Forge’s legitimate business needs. Except as otherwise required by law (or for purposes of sharing with law enforcement entities), no Confidential information may be disclosed to parties outside Forge, including contractors, without the proposed recipient’s prior written agreement (i) to take appropriate measures to safeguard the confidentiality of the Confidential information; (ii) not to disclose the Confidential information to any other party for any purpose absent Forge’s prior written consent or a valid court order or subpoena; and (iii) to notify Forge in advance of any disclosure pursuant to a court order or  subpoena unless the order or subpoena explicitly prohibits such notification. In addition, the proposed recipient must abide by the requirements of this Standard. Any sharing of Confidential information within Forge must comply with other Forge Group governing documents.
+
+The following list of Confidential Data is not exhaustive:
+- Proprietary information or research
+- Trade Secrets
+- Technical diagrams
+- Source code of software
+- Algorithms
+- Data models
+- Patent Rights
+- Forge’s customer or prospective client list
+- Business Plans
+- Strategy Documents
+- Contracts
+- Operational Practices
+- Unpublished financial information
+- Data protected by state and federal regulations (SEC/FINRA)
+
+Restricted Information Classification (AKA Restricted)
+Forge Information is classified as Restricted if it falls outside the Confidential classification but is not intended to be shared freely within or outside Forge due to its sensitive nature and/or contractual or legal obligations.
+Sharing of Restricted information may be permissible, if necessary to meet Forge’s legitimate business needs. Unless disclosure is required by law (or for purposes of sharing between law enforcement entities), when disclosing Restricted information to parties outside Forge, the proposed recipient must agree  (i) to take appropriate measures to safeguard the confidentiality of the information; (ii) not to disclose the information to any other party for any purpose absent Forge’s prior written consent or a valid court order or subpoena; and (iii) to notify Forge in advance of any disclosure pursuant to a court order or  subpoena unless the order or subpoena explicitly prohibits such notification. In addition, the proposed recipient must abide by the requirements of this Standard. Any sharing of Restricted information within Forge must comply with other Forge Group governing documents.
+If Restricted information needs to be shared with a party that does not fall subject to this standard (e.g., the party is not a member of Forge’s workforce), then the Confidentiality Boilerplate from Appendix E must be inserted. Coordinate with Legal for additional guidance.
+
+The following list of Restricted Data is not exhaustive:
+- Social Security Numbers
+- Credit Card Numbers
+- Health Records/ Personal Health Information 
+- Personally Identifiable Information
+- Financial Records
+- Humans Resources System Data
+- Content hosted on Forge websites only accessible post user authentication
+
+Internal Only Information Classification (AKA Internal or Internal Only)
+Forge Information is classified as Internal Only if it falls outside the Confidential and Restricted classifications but is not intended to be freely shared outside Forge. Examples of Internal Only information are a company organizational chart, policies and procedures, or internal training documents.
+The presumption is that Internal Only information will remain within Forge. However, this information may be shared outside of Forge, if necessary to meet Forge’s legitimate business needs, and the proposed recipient agrees, in writing or email, not to re-disclose the information without Forge’s consent.
+
+The following list of Internal Data is not exhaustive:
+- Forge emails, instant message (chat) conversations
+- Forge created PowerPoints, Word documents, Excel files, OneNote files
+- Intranet sites
+- Internal Memos
+
+Public Information Classification (AKA Public)
+Forge Information is classified as Publicly Available if it is intended to be made available to anyone inside and outside of Forge.
+
+The following list of Public Data is not exhaustive:
+
+- Public Press Releases
+- Financial statements of publicly traded companies 
+- Forge approved content hosted on Forge external facing websites which require no user authentication
+- Certificate of Incorporation
+- NPORT and 10K
+- Any data publicly available from SEC websites like EDGAR

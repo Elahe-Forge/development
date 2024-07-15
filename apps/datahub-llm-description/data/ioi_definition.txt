@@ -1,0 +1,26 @@
+Indications of Interest are non-binding bids and asks placed with Forge Securities, LLC via the registered brokers. The data provided here may not be indicative of the full order book for a market, and due to client engagement with Forge Markets, not all IOIs may necessarily be actionable.
+
+Collection & Methodology
+The IOI data is extracted from the Forge Markets database nightly, at which point the data is sanitized, transformed, and loaded into Forge Data.
+
+Terms & Definitions
+Schema Label	Data Type	Description
+issuerKey	Text	The unique identifier of the issuer.
+id	UUID	A unique identifier attributed to each transaction, which can be joined across data sets.
+createdDate	Date	The date at which a client submitted the bid or ask to Forge Securities, LLC.
+updatedDate	Date	The last date in which an update was made to the IOI.
+shareClass	Text	The underlying asset of the IOI.
+Allowed Values:
+Common - Includes options and common stock.
+Preferred - Includes all classes of preferred stock.
+interestType	Text	The type of IOI.
+Allowed Values:
+Ask - Indicates a client’s interest to sell.
+Bid - Indicates a client’s interest to buy.
+minSharesCount	Numeric	The minimum number of shares a client has expressed an interest in buying or selling.
+maxSharesCount	Numeric	In cases where clients have entered a range, the maximum number of shares a client has expressed an interest in buying or selling.
+minPrice	Numeric	The minimum price per share shares a client has expressed an interest in buying or selling.
+maxPrice	Numeric	In cases where clients have entered a range, the maximum price per share a client has expressed an interest in buying or selling.
+transactionSize	Numeric	The transaction size of the indication of interest
+currency	Symbol	Denotes the underlying currency of the pricing data.
+clientType	Text	Indicates if the client was classified as Individual or Institutional as defined by a Forge Securities, LLC broker.

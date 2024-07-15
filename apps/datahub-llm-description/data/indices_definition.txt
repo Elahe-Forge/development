@@ -1,0 +1,12 @@
+Includes the daily calculations of the index price and performance for a particular index.
+
+Collection & Methodology
+The data for FPMI (Forge Private Market Index) and future private market indices are meticulously collected and processed to ensure accuracy and relevancy. Our dedicated data analytics team employs a robust methodology, engaging in daily calculations to update the index. FPMI reflects the up-to-date performance and pricing activity of venture-backed, late-stage companies that are actively traded in the private market. As we expand our suite of indices, this methodical approach will be tailored to accommodate their unique characteristics, maintaining the integrity and precision of our indices. This ensures that our clients receive reliable, up-to-date insights into the evolving landscape of private markets.
+
+Terms & Definitions
+Schema Label	Data Type	Description
+asOfDate	Date	The date index was published.
+indexPrice	Numeric	The price of the index.
+indexName	Text	The name of the index.
+qtdPerformance	Numeric	The quarter to date performance of the index.
+ytdPerformance	Numeric	The year to date performance of the index.

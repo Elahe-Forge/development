@@ -1,0 +1,19 @@
+The public marks tab contains all publicly reported marks collected and processed by Forge Data. Public Marks are filed on a monthly/quarterly cadence by mutual funds in federally required reportings, either N-PORT or N-CSR.
+
+Collection & Methodology
+Forge Data leverages web scraping and RPA to extract N-PORT and N-CSRs from the SEC EDGAR website, identify private company holdings within those documents, and calculate the FMV/Share derived for each Mutual Fund position. That data is then batch uploaded to and made available here, as defined below.
+
+Terms & Definitions
+Schema Label	Data Type	Description
+id	UUID	A unique identifier for the Public Mark.
+fundingRoundId	UUID	The unique identifier of the Funding Round associated with the public Mark, where available.
+issuerKey	Text	The unique identifier of the issuer.
+fundName	Text	Descriptive name of the subject fund to which each mark belongs.
+source	Text	Web address of source documents on the SEC EDGAR website where the mark was collected.
+fundTicker	Text	Where available, the trading ticker for the subject fund.
+reportedDate	Date	Date corresponding to the Fair Market Value ("FMV") as reported by the subject fund.
+shareClass	Text	Underlying share class reported by the Mutual Fund.
+price	Numeric	FMV per share, as calculated by the subject fund.
+currency	Symbol	Denotes the underlying currency of the pricing data.
+Notes
+The FMV/share is calculated by dividing the marked valuation of the subject fund for an company, by the number of shares held in that company name.

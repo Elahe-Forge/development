@@ -1,0 +1,15 @@
+Forge Price is a daily derived dataset based on a proprietary pricing model developed by Forge Data
+
+Collection & Methodology
+Currently, the coverage is approximately 250 names, comprised of U.S. venture-backed, late-stage companies with active secondary trading activities. To be included in the universe, a company needs to have active trading activities on Forge and/or other third-party trading platforms. Currently, our pricing model factors in information from both closed trades and indications of interest (IOIs), including data points such as volume, price, size, and count of transactions. Companies in the Forge Price universe are priced daily, with time-series information available. Notable names include SpaceX, Automation Anywhere, ZocDoc, Tanium, Stripe, Intercom, Reddit, Standard AI, Dialpad, Arctic Wolf, and Chainalysis. We currently use Forge prices to value the Forge Private Market Index, which reflects the up-to-date performance and pricing activity of venture-backed, late-stage companies that are actively traded in the private market.
+
+Terms & Definitions
+Schema Label	Data Type	Description
+issuerKey	Text	The unique identifier of the issuer.
+companyName	Text	The name of the company.
+sector	Text	The sector code for the issuer.
+subSector	Text	The sub sector code for the issuer.
+forgePrice	Numeric	The price of the issuer as of a specific date.
+asOfDate	Date	The date the forge price was calculated.
+currency	Symbol	Denotes the underlying currency of the pricing data.
+source	Text	The underlying data sources.

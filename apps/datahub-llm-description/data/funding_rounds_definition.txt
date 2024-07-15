@@ -1,0 +1,33 @@
+The Funding Rounds contains the preferred stock details for each company extracted from the Certificates of Incorporation and related documents filed with relevant state's agencies (1)(2). These documents authorize the various equity types available for companies to sell in primary funding rounds(3).
+
+Collection & Methodology
+The Forge Data content team regularly fetches the latest filings from state's agencies on a per-company basis, parses out the pertinent cap table information as defined below, and uploads funding round data and supporting documents.
+
+Terms & Definitions
+Schema Label	Data Type	Description
+issuerKey	Text	The unique identifier of the issuer.
+id	UUID	A unique identifier for the funding round.
+fundingDate	Date	For each share class, the identified date when shares were fully sold by the company.
+shareClass	Text	Each existing class of preferred stock, as represented by the most recently available Certificate of Incorporation. This does not include any conversion to common shares occurring at exit.
+sharesOutstanding	Text	Estimated number of shares outstanding for each share class.
+issuePrice	Numeric	Original issue price for each preferred share class.
+currency	Symbol	Denotes the underlying currency of the pricing data.
+impliedValuation	Numeric	Estimated total equity valuation associated with the sale of each preferred share class.
+amountRaised	Numeric	Consideration paid in association with the sale of each preferred share class.
+conversionRatio	Numeric	Number of common preferred shareholder will receive upon conversion, stated as a multiple of the original issue price.
+liquidationPreferenceMultiple	Numeric	Consideration each share of preferred stock is entitled to in liquidation, stated as a multiple of the original issue price.
+liquidationPreferenceOrder	Numeric	Order in which each preferred share class is entitled to be paid its full liquidation preference.
+participation	Boolean	true - A certain series of preferred stock has participation rights (entitled to share with common shareholders any remaining liquidation proceeds above liquidation preference).
+false - A certain series of preferred stock does not have participation rights.
+participationCap	Text	If participation is capped, value will be stated as a multiple of the original issue price. If participation is uncapped, value will be equal to 1,000.
+dividendRate	Numeric	Dividend rate each share of preferred stock is entitled to receive, stated as a percentage of the original issue price.
+dividendCumulative	Boolean	true - Dividends for a certain series of preferred stock accrues until it is fully paid.
+false - Dividends for a certain series of preferred stock do not. accrue
+dividendType	Text	Allowed Values:
+stock
+cash
+either
+Notes
+While the majority of companies are incorporated in Delaware, this is not always the case. For companies that are domiciled internationally, these documents are not available, and thus we cannot provide cap table information.
+The data shown is generated from what is represented on company's latest identified Certificate of Incorporation. As such, there may be instances (e.g. re-capitalizations) where the information shown does not fully represent all equity types that have existed historically for any given company.
+This authorization is not a requirement to sell said shares, and the company may choose to sell a portion or none

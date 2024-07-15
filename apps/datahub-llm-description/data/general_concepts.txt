@@ -1,0 +1,11 @@
+id is a unique identifier for the table
+slug or issuer_slug is a unique identifier safe to be used in a web_url
+issuer_id is the unique identifier of a specific issuer
+issuer_id it's often referred to issuer_slug or just slug
+createt_at is a timestamp representing the creation of the record
+updared_at is a timestamp representing the last known update of the record
+_fivetran_deleted (BOOLEAN) marks deleted rows in the source database.
+_fivetran_synced (UTC TIMESTAMP) indicates when Fivetran last successfully synced the row.
+_fivetran_index (INTEGER) shows the order of updates for tables that do not have a primary key.
+_fivetran_id (STRING) is the hash of the non-Fivetran values of each row. It's a unique ID that Fivetran uses to avoid duplicate rows in tables that do not have a primary key.
+fields starting with dw_ are internal surrogate keys used in the EDW

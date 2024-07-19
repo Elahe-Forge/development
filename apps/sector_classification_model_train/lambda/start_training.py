@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import time
 
@@ -11,23 +12,38 @@ from sagemaker.session import Session
 from smexperiments.experiment import Experiment
 from utils.utils import load_and_save_config, load_model_parameters
 
+load_dotenv()
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+sns_client = boto3.client("sns")
+topic_arn = os.getenv("TOPIC_ARN")
+
+
+def send_sns_notification(message, subject):
+    # Send SNS notification
+    sns_client.publish(
+        TopicArn=topic_arn,
+        Subject=subject,
+        Message=message,
+    )
+    print("Error message sent via SNS")
+
 
 def handler(event, context):
     print("event", event)
-    try:
-        load_dotenv()
 
+    try:
         region = "us-west-2"
         sess = boto3.Session(region_name=region)
         sm = sess.client("sagemaker")
-        # role = os.getenv("SAGEMAKER_ROLE")
 
         execution_role_arn = os.getenv("TARGET_ROLE_ARN")
         if not execution_role_arn:
             raise ValueError("Execution role ARN not set in environment variables")
 
         print(f"Execution Role ARN: {execution_role_arn}")
-        # role = "arn:aws:iam::597915789054:role/brandtbo-sagemaker-train"
 
         if "test" in event:
             bucket = event["bucket"]
@@ -39,7 +55,9 @@ def handler(event, context):
         print("bucket", bucket)
         print("key", key)
 
+        # job id for items
         job_id = int(time.time())
+
         # read in config file
         config_data = load_and_save_config(bucket, key, job_id)
 
@@ -55,15 +73,12 @@ def handler(event, context):
         except:
             print("Experiment already exists:", model_parameters["experiment_name"])
 
-        print(model_parameters["experiment_name"])
-
         with Run(
             experiment_name=model_parameters["experiment_name"],
             sagemaker_session=Session(),
             run_name=f"{model_parameters['model_name'].split('-')[0]}-epoch-{model_parameters['epochs']}-{job_id}",
         ) as run:
 
-            print("huggingface_estimator")
             # HuggingFace container in SageMaker
             huggingface_estimator = HuggingFace(
                 entry_point="train.py",
@@ -80,9 +95,7 @@ def handler(event, context):
                 output_path=model_parameters["output_path"],
             )
 
-            print("huggingface_estimator.fit")
             # starts training job in SageMaker
-
             huggingface_estimator.fit(
                 inputs={
                     "train": model_parameters["train_input_path"],
@@ -92,13 +105,20 @@ def handler(event, context):
                 wait=False,
             )
 
-            return {"statusCode": 200, "body": "Model Training Started"}
+            response = {"statusCode": 200, "body": "Training job started"}
+            logger.info(json.dumps(response))
 
-    except ClientError as e:
+            return response
+
+    except Exception as e:
+        msg_subject = "Error in Sector Train Lambda Function"
+        send_sns_notification(str(e), msg_subject)
+
         response = {
             "statusCode": 500,
             "body": json.dumps(
                 {"error": str(e), "message": e.response["Error"]["Message"]}
             ),
         }
+        logger.error(json.dumps(response))
         return response

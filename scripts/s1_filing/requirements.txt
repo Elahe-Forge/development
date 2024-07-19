@@ -1,0 +1,14 @@
+ollama
+llama_index
+faiss-cpu
+pandas
+PyMuPDF  
+pytest  
+langchain
+requests
+beautifulsoup4
+langchain_experimental
+langchain_openai
+nltk
+chromadb
+transformers

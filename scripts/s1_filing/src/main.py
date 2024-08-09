@@ -14,62 +14,67 @@ import os
 
 def main():
     # Load PDF
-#     text = load_pdf('data/reddit.pdf')
+    text = load_pdf('../data/reddit.pdf')
 
-#     # Parse HTML from URL
-#     html_url = 'https://www.utoronto.ca/'
-#     html_texts = parse_html(html_url)
+    # Parse HTML from URL
+    html_url = 'https://www.sec.gov/Archives/edgar/data/1713445/000162828024010137/reddit-sx1a1.htm'
+    html_texts = parse_html(html_url)
 
-#     # Ensure html_texts is a list of strings
-#     html_texts = [str(node) for node in html_texts]
+    # Ensure html_texts is a list of strings
+    html_texts = [str(node) for node in html_texts]
 
 
-#     # Apply different chunking strategies
-#     fixed_chunks = fixed_size_chunking(text)
-#     semantic_chunks = semantic_chunking(text)
-#     agentic_chunks = agentic_chunking(text)
+    # Apply different chunking strategies
+    fixed_chunks = fixed_size_chunking(text)
+    semantic_chunks = semantic_chunking(text)
+    agentic_chunks = agentic_chunking(text)
 
-#     # char_chunks = character_text_splitting(" ".join(html_texts))
-#     # sentence_chunks = sentence_splitting(" ".join(html_texts))
-#     # semantic_chunks2 = semantic_splitting(" ".join(html_texts))
+    char_chunks = character_text_splitting(" ".join(html_texts))
+    sentence_chunks = sentence_splitting(" ".join(html_texts))
+    semantic_chunks2 = semantic_splitting(" ".join(html_texts))
 
-#     # Create vector stores for each chunking strategy
-#     fixed_vector_store = create_vector_store(fixed_chunks)
-#     semantic_vector_store = create_vector_store(semantic_chunks)
-#     agentic_vector_store = create_vector_store(agentic_chunks)
+    # Create vector stores for each chunking strategy
+    fixed_vector_store = create_vector_store(fixed_chunks)
+    semantic_vector_store = create_vector_store(semantic_chunks)
+    agentic_vector_store = create_vector_store(agentic_chunks)
     
-#     # char_vector_store = create_vector_store([chunk.page_content for chunk in char_chunks])
-#     # sentence_vector_store = create_vector_store(sentence_chunks)
-#     # semantic_vector_store2 = create_vector_store(semantic_chunks2)
+    char_vector_store = create_vector_store([chunk.page_content for chunk in char_chunks])
+    sentence_vector_store = create_vector_store(sentence_chunks)
+    semantic_vector_store2 = create_vector_store(semantic_chunks2)
 
-#     # Initialize RAG pipelines for each strategy
-    fixed_rag_pipeline = RAGPipeline()
-#     semantic_rag_pipeline = RAGPipeline(semantic_vector_store)
-#     agentic_rag_pipeline = RAGPipeline(agentic_vector_store)
+    # Initialize RAG pipelines for each strategy
+    fixed_rag_pipeline = RAGPipeline(fixed_vector_store)
+    semantic_rag_pipeline = RAGPipeline(semantic_vector_store)
+    agentic_rag_pipeline = RAGPipeline(agentic_vector_store)
 
-#     # char_rag_pipeline = RAGPipeline(char_vector_store)
-#     # sentence_rag_pipeline = RAGPipeline(sentence_vector_store)
-#     # semantic_rag_pipeline2 = RAGPipeline(semantic_vector_store2)
+    char_rag_pipeline = RAGPipeline(char_vector_store)
+    sentence_rag_pipeline = RAGPipeline(sentence_vector_store)
+    semantic_rag_pipeline2 = RAGPipeline(semantic_vector_store2)
 
     # Example query for each strategy
-    query = "what is capital of sweden."
+    # query = """
+    #     A lock-up period is a window of time when investors are not allowed to redeem or sell shares of a particular investment. 
+    #     When is the lockup period as stated in the document?
+    # """
+
+    query = "what is the name of the company?"
     print("Fixed Size Chunking Response:")
     print(fixed_rag_pipeline.generate_response(query))
     
-#     print("Semantic Chunking Response:")
-#     print(semantic_rag_pipeline.generate_response(query))
+    print("Semantic Chunking Response:")
+    print(semantic_rag_pipeline.generate_response(query))
     
-#     print("Agentic Chunking Response:")
-#     print(agentic_rag_pipeline.generate_response(query))
+    print("Agentic Chunking Response:")
+    print(agentic_rag_pipeline.generate_response(query))
 
-#     # print("Character Text Splitting Response:")
-#     # print(char_rag_pipeline.generate_response(query))
+    print("Character Text Splitting Response:")
+    print(char_rag_pipeline.generate_response(query))
     
-#     # print("Sentence Splitting Response:")
-#     # print(sentence_rag_pipeline.generate_response(query))
+    print("Sentence Splitting Response:")
+    print(sentence_rag_pipeline.generate_response(query))
     
-#     # print("Semantic Splitting Response:")
-#     # print(semantic_rag_pipeline2.generate_response(query))
+    print("Semantic Splitting Response:")
+    print(semantic_rag_pipeline2.generate_response(query))
 
 if __name__ == "__main__":
     main()

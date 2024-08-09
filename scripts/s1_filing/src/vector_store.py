@@ -21,6 +21,9 @@ class VectorStore:
     def add_documents(self, texts):
         for i, text in enumerate(texts):
             embedding = self.embed_text(text)
+            if not embedding:
+                logger.error(f"Failed to generate embedding for text: {text[:50]}")
+                continue
             self.collection.add(
                 ids=[str(i)],
                 embeddings=[embedding],
@@ -41,6 +44,9 @@ class VectorStore:
 
     def search(self, query, top_k=5):
         embedding = self.embed_text(query)
+        if not embedding:
+            logger.error(f"Failed to generate embedding for query: {query}")
+            return []
         results = self.collection.query(
             query_embeddings=[embedding],
             n_results=top_k

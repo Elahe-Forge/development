@@ -1,0 +1,5 @@
+langchain-community
+amazon-textract-caller
+amazon-textract-textractor
+boto3
+python-dotenv

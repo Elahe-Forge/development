@@ -1,0 +1,12 @@
+{
+  "app": "python3 app.py",
+  "context": {
+      "env": "dev",
+      "dev": {
+          "account": "597915789054",
+          "region": "us-west-2",
+          "file_assets_bucket_name": "coi-reader-aiml-cdk-dev",
+          "team": "orange"
+      }
+  }
+}

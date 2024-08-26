@@ -1,0 +1,30 @@
+Chunking Method,Response
+No RAG Response,"This is a registration statement filed with the Securities and Exchange Commission (SEC) by Rubrik, Inc. under the Securities Act of 1933. The registration statement is for an initial public offering (IPO) of securities.
+
+The document includes several sections:
+
+I. Lock-up period: This section states that investors are not allowed to redeem or sell their shares during a certain period of time, which is typically 180 days from the IPO date.
+
+II. Undertaking: This section outlines the responsibilities and obligations of the registrant (Rubrik, Inc.) in connection with the registration statement.
+
+III. Signatures: This section lists the signatures of the company's executives and directors who are responsible for filing the registration statement with the SEC.
+
+The signatories include:
+
+* Bipul Sinha, Chief Executive Officer and Director
+* Kiran Choudary, Chief Financial Officer (Principal Financial and Accounting Officer)
+* Arvind Nithrakashyap, Chief Technology Officer and Director
+* Asheem Chandna, Director
+* R. Scott Herren, Director
+* Mark D. McLaughlin, Director
+* Ravi Mhatre, Director
+* Enrique Salem, Director
+* John W. Thompson, Director
+* Yvonne Wassenaar, Director
+
+The date of signature is April 1, 2024.
+
+Overall, this registration statement provides information about the IPO and the securities being offered by Rubrik, Inc., as well as the obligations and responsibilities of the company's executives and directors in connection with the offering."
+Fixed Size Chunking Response,06/30/24
+Semantic Chunking Response,03/15/2024
+Agentic Chunking Response,08/12/2024

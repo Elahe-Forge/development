@@ -1,0 +1,5 @@
+Chunking Method,Response
+No RAG Response,"There is no lock-up period mentioned in the document. The text only provides information about a registration statement filed with the Securities and Exchange Commission, but it does not mention a lock-up period. Therefore, I cannot return a date for the lock-up period as instructed."
+Fixed Size Chunking Response,"There is no lockup period mentioned in the document. Therefore, I cannot return a date in mm/dd/yyyy format as requested."
+Semantic Chunking Response,There is no lockup period mentioned in the provided document.
+Agentic Chunking Response,"There is no lockup period mentioned in the document. The document only contains information about a registration statement and does not mention a lockup period. Therefore, I cannot provide an answer in mm/dd/yyyy format."

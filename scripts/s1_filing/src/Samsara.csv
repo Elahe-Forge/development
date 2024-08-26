@@ -1,0 +1,26 @@
+Chunking Method,Response
+No RAG Response,"This is a registration statement on Form S-1 filed with the Securities and Exchange Commission (SEC) by Samsara Inc. The document contains various exhibits, schedules, and certifications, including:
+
+1. Lock-up period: A window of time when investors are not allowed to redeem or sell shares in Control and Severance Plan.
+2. Employment letters:
+	* 10.8+: Employment letter between the registrant and Sanjit Biswas.
+	* 10.9+: Employment letter between the registrant and John Bicket.
+	* 10.10+: Employment letter between the registrant and Kiren Sekar.
+3. Subsidiaries: List of subsidiaries of the registrant (21.1).
+4. Consent of auditor: Consent of Deloitte & Touche LLP, Independent Registered Public Accounting Firm (23.1).
+5. Power of Attorney: A document granting power of attorney to certain individuals, including Sanjit Biswas, John Bicket, Dominic Phillips, and Adam Eltoukhy.
+6. Signatures: The signatures of the following individuals in their respective capacities and on the dates indicated:
+	* Sanjit Biswas, Chief Executive Officer and Director (Principal Executive Officer)
+	* Dominic Phillips, Chief Financial Officer (Principal Financial Officer and Principal Accounting Officer)
+	* John Bicket, Director
+	* Marc Andreessen, Director
+	* Sue Bostrom, Director
+	* Jonathan Chadwick, Director
+	* Ann Livermore, Director
+	* Hemant Taneja, Director
+	* Susan L. Wagner, Director
+
+The registration statement is dated November 19, 2021, and was filed with the SEC electronically via EDGAR (Electronic Data Gathering, Analysis, and Retrieval system)."
+Fixed Size Chunking Response,06/15/yyyy (will vary depending on the date of this prospectus)
+Semantic Chunking Response,06/30/yyyy (no specific year provided)
+Agentic Chunking Response,08/12/2021

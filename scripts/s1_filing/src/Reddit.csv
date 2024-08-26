@@ -1,0 +1,22 @@
+Chunking Method,Response
+No RAG Response,"This appears to be the Exhibit Index for a Securities and Exchange Commission (SEC) filing, specifically a Registration Statement on Form S-1 filed by Reddit, Inc. The exhibit index lists various exhibits that are included as part of the registration statement.
+
+Here is a summary of the exhibits:
+
+* 10.9(a)-(c): Various agreements related to equity incentive plans
+* 10.10-11: Employee Stock Purchase Plan and Amended and Restated Employment Offer Letters for certain employees
+* 10.12: Form of Indemnification Agreement between Reddit, Inc. and its Directors and Executive Officers
+* 10.13-16: Amended and Restated Employment Offer Letters for certain employees
+* 10.17-18: Change in Control and Severance Agreements for certain employees
+* 10.19: Executive Change in Control and Severance Plan
+* 21.1: List of Subsidiaries of Reddit, Inc.
+* 23.1-2: Consents from independent auditors KPMG LLP and Latham & Watkins LLP
+* 24.1: Power of Attorney for the registration statement
+* 99.1-3: Various agreements related to voting and director nominees
+
+The exhibit index also includes a note indicating that certain exhibits have been omitted in accordance with SEC rules, and that copies of these omitted schedules and exhibits will be provided upon request."
+Fixed Size Chunking Response,"June 30, 2024, and 180 days after the date of this prospectus."
+Semantic Chunking Response,"June 30, 2024 and 180 days after the date of this prospectus."
+Agentic Chunking Response,"The lockup period is:
+
+June 30, 2024 (third trading day immediately following our public release of earnings) or 180 days after the date of this prospectus."

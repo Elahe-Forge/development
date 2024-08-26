@@ -1,0 +1,5 @@
+.env
+cdk.out
+cdk.context.json
+.DS_Store
+__pycache__

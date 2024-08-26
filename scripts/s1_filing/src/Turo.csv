@@ -1,0 +1,17 @@
+Chunking Method,Response
+No RAG Response,"This is a filing with the Securities and Exchange Commission (SEC) by TURO INC., also known as Turo. The document is an amendment to their registration statement, specifically a post-effective amendment (Form 8-K/A).
+
+The filing includes several undertakings by the registrant:
+
+1. A lock-up period: Investors are not allowed to redeem or sell their securities during a specified window of time.
+2. Indemnification: The registrant will indemnify its directors, officers, and controlling persons against liabilities arising under the Securities Act, but only for expenses incurred or paid by these individuals in defending any action, suit, or proceeding.
+
+The filing also includes the following certifications:
+
+* The undersigned registrant hereby undertakes that... (This section outlines certain requirements related to the registration statement.)
+* Pursuant to the requirements of the Securities Act of 1933, as amended, the registrant has duly caused this registration statement to be signed on its behalf by the undersigned, thereunto duly authorized... (This is a certification by the Chief Executive Officer and Chairperson of TURO INC., Andre Haddad.)
+
+The filing also includes signatures from various executives, directors, and an attorney-in-fact."
+Fixed Size Chunking Response,12/08/2024
+Semantic Chunking Response,12/24
+Agentic Chunking Response,12/24

@@ -1,0 +1,24 @@
+Chunking Method,Response
+No RAG Response,"This appears to be a filing with the Securities and Exchange Commission (SEC) by Rent the Runway, Inc. The document is an amendment to their initial registration statement on Form S-1, filed under the Securities Act of 1933.
+
+The main sections of the filing are:
+
+I. Information Required in Part I
+
+* Lock-up period: a description of the period during which investors cannot redeem or sell securities
+* Removal of securities from registration: a provision for removing unsold securities from the registration statement
+* Indemnification: a provision that indemnifies directors, officers, and controlling persons against liabilities arising under the Securities Act
+
+II. Undertakings
+
+* A promise to include certain information in the registration statement
+* A promise to submit to a court of appropriate jurisdiction any question about whether indemnification is against public policy as expressed in the Securities Act
+
+III. Signatures
+
+* The signatures of the registrant's officers and directors, including Jennifer Y. Hyman, Chief Executive Officer; Scarlett O'Sullivan, Chief Financial Officer; and several other directors.
+
+This filing appears to be related to an initial public offering (IPO) by Rent the Runway, Inc., a fashion rental company."
+Fixed Size Chunking Response,8/12/24
+Semantic Chunking Response,8/12/24
+Agentic Chunking Response,8/12/24

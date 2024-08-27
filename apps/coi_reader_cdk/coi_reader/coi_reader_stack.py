@@ -28,6 +28,7 @@ class CoiReaderStack(Stack):
             auto_delete_objects=True,
         )
 
+        ## PDF TEXTRACT LAMBDA FUNCTION
         # Create the Lambda function
         pdf_textract_lambda_fxn = PythonFunction(
             self,
@@ -60,7 +61,7 @@ class CoiReaderStack(Stack):
                     "s3:PutObject",
                     "s3:GetBucketLocation",
                 ],
-                resources=["arn:aws:s3:::*", "arn:aws:s3:::*/*"],
+                resources=[f"{bucket.bucket_arn}/*"],
             )
         )
 
@@ -79,9 +80,67 @@ class CoiReaderStack(Stack):
         )
 
         # Set up the S3 bucket notification to trigger the Lambda function
-        notification = s3n.LambdaDestination(pdf_textract_lambda_fxn)
+        pdf_textract_notification = s3n.LambdaDestination(pdf_textract_lambda_fxn)
         bucket.add_event_notification(
             s3.EventType.OBJECT_CREATED,
-            notification,
+            pdf_textract_notification,
             s3.NotificationKeyFilter(prefix="inputs/pdfs/", suffix=".pdf"),
         )
+
+        ## DATA EXTRACT LAMBDA FUNCTION
+        # Create the Lambda function
+        data_extract_lambda_fxn = PythonFunction(
+            self,
+            "DataExtractFunction",
+            entry="lambdas/dataExtract",
+            runtime=_lambda.Runtime.PYTHON_3_10,
+            index="handler.py",
+            handler="handler",
+            architecture=_lambda.Architecture.ARM_64,
+            memory_size=1024,
+            timeout=Duration.seconds(600),
+            environment={"BUCKET_NAME": bucket.bucket_name},
+        )
+
+        # Grant Lambda function permissions to access S3
+        data_extract_lambda_fxn.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "s3:ListBucket",
+                    "s3:GetObject",
+                    "s3:PutObject",
+                    "s3:GetBucketLocation",
+                ],
+                resources=[f"{bucket.bucket_arn}/*"],
+            )
+        )
+
+        # Option 2: Alternatively, you can add the permission directly using IAM policy
+        data_extract_lambda_fxn.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["secretsmanager:GetSecretValue"],
+                resources=[
+                    f"arn:aws:secretsmanager:{env_region}:{env_account}:secret:data-science-and-ml-models/openai-Sc0RKh"
+                ],
+            )
+        )
+
+        # Grant Lambda function permissions to read from the bucket
+        bucket.grant_read(data_extract_lambda_fxn)
+
+        # Set up the S3 bucket notification to trigger the Lambda function
+        data_extract_notification = s3n.LambdaDestination(data_extract_lambda_fxn)
+        bucket.add_event_notification(
+            s3.EventType.OBJECT_CREATED,
+            data_extract_notification,
+            s3.NotificationKeyFilter(prefix="outputs/document_txts/", suffix=".txt"),
+        )
+
+        # # TRANSFORM NOTIFICATION
+        # # Set up the S3 bucket notification to trigger the Lambda function
+        # data_extract_notification = s3n.LambdaDestination(data_extract_lambda_fxn)
+        # bucket.add_event_notification(
+        #     s3.EventType.OBJECT_CREATED,
+        #     data_extract_notification,
+        #     s3.NotificationKeyFilter(prefix="outputs/config_json/", suffix=".json"),
+        # )

@@ -44,8 +44,11 @@ def handler(event, context):
         )
         print(f"File saved to S3: {bucket}/{output_key}")
 
+        return {"statusCode": 200, "body": json.dumps("Text extraction complete!")}
+
     except Exception as e:
         print(f"Error in processing PDF to txt: {e}")
-
-    # print(f"Extracted text {len(text)} length. Text header:", text[:200])
-    return {"statusCode": 200, "body": json.dumps("Text extraction complete!")}
+        return {
+            "statusCode": 501,
+            "body": json.dumps("Error! Text extraction did not complete!"),
+        }

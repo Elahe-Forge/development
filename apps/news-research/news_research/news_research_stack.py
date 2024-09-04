@@ -19,7 +19,8 @@ from aws_cdk import (
     aws_sns,
     aws_sns_subscriptions,
     aws_cloudwatch_actions,
-    aws_ssm
+    aws_ssm,
+    RemovalPolicy
 )
 from constructs import Construct
 import os
@@ -157,7 +158,7 @@ class NewsResearchStack(Stack):
           handler       = aws_lambda.Handler.FROM_IMAGE,
           runtime       = aws_lambda.Runtime.FROM_IMAGE,
           environment   = {
-                'ONLY_TRUSTED_SITES': 'Y', # or N
+                'ONLY_TRUSTED_SITES': 'N', # Y or N
                 'NEWS_TABLE': news_table.table_name,
                 'ISSUER_QUEUE_URL': issuer_queue.queue_url,
                 'LLM_CONSUMER_QUEUE_URL': llm_consumer_queue.queue_url
@@ -225,7 +226,7 @@ class NewsResearchStack(Stack):
                 'ATHENA_TABLE': athena_table, 
                 'S3_EXCEL_SHEET_LOCATION': news_input_location,
                 'S3_OUTPUT_LOCATION': s3_athena_output_location,
-                'DEFAULT_NUMBER_OF_ARTICLES': '5',
+                'DEFAULT_NUMBER_OF_ARTICLES': '4',
                 'DEFAULT_GET_SUMMARY': 'true'
           },
           function_name = f"NewsEndpointsFunction-{env_name}",
@@ -268,11 +269,22 @@ class NewsResearchStack(Stack):
             rest_api_name=f'NewsApi-{env_name}'
         )
 
-        # Resource for running all companies
-        run_all_resource = api.root.add_resource('run-all')
+        # Apply a removal policy to retain the API Gateway when the stack is destroyed
+        api.apply_removal_policy(RemovalPolicy.RETAIN)
+
+        # Resource for running extracted companies from json
+        run_all_resource = api.root.add_resource('run-json')
         run_all_resource.add_method('POST', request_parameters={
                 'method.request.querystring.number_of_articles': False,  # Optional to provide
                 'method.request.querystring.get_summary': False          # Optional to provide 
+            }
+        )
+
+        # Resource for running all companies
+        run_all_resource = api.root.add_resource('run-all')
+        run_all_resource.add_method('POST', request_parameters={
+                'method.request.querystring.number_of_articles': False,  
+                'method.request.querystring.get_summary': False           
             }
         )
 

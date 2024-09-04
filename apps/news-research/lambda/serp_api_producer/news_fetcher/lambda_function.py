@@ -176,7 +176,7 @@ def store_in_dynamodb(data, table):
             return False
 
 
-def process_news(news_results, issuer_name, sqs_url, dynamodb_table, get_summary, triggered_by):
+def process_news(news_results, issuer_name, sqs_url, dynamodb_table, slug, company_id, get_summary, triggered_by):
     """
     Process multiple news_results: check existence, store new in S3, and send to SQS.
     """
@@ -185,6 +185,8 @@ def process_news(news_results, issuer_name, sqs_url, dynamodb_table, get_summary
             item['date'] = convert_relative_date_to_actual(item.get('date'))
             item['company_name_link_date'] = f"{issuer_name}-{item.get('link')}-{item['date']}"
             item['issuer_name'] = issuer_name
+            item['slug'] = slug
+            item['company_id'] = company_id
             item['get_summary'] = get_summary
             item['triggered_by'] = triggered_by
 
@@ -205,15 +207,20 @@ def handler(event, context):
     # Each record is one SQS message to parse
     for record in event['Records']:
         message_body = json.loads(record['body']) # body is the actual content of the message that is enqueued in the parent Lambda function
+        
         issuer_name = message_body['issuer_name']
+        slug = message_body['slug']
+        company_id = message_body['company_id']
         number_of_articles = message_body['number_of_articles']
         get_summary = message_body['get_summary'] 
         triggered_by = message_body['triggered_by']
+        
+        logger.info(f"issuer_name: {issuer_name}, slug: {slug}, company_id: {company_id}")
 
         news_results = get_google_news(issuer_name, number_of_articles, serpapi_secret_key, only_trusted_sites)
         logger.info(f"News results for {issuer_name}: {news_results}")
         
-        process_news(news_results, issuer_name, sqs_url, dynamodb_table, get_summary, triggered_by)
+        process_news(news_results, issuer_name, sqs_url, dynamodb_table, slug, company_id, get_summary, triggered_by)
 
 
 

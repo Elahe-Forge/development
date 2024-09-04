@@ -96,7 +96,9 @@ def process_api_gateway_event(event):
 
     # Determine the type of command (run-all or run-issuer)
     path = event.get('resource')
-    if path == '/run-all':
+    if path == '/run-json':
+        return process_run_json(event, number_of_articles, get_summary)  
+    elif path == '/run-all':
         return process_run_all(event, number_of_articles, get_summary)
     elif path == '/run-issuer':
         return process_run_issuer(event, number_of_articles, get_summary)
@@ -108,6 +110,55 @@ def process_api_gateway_event(event):
             'statusCode': 400,
             'body': json.dumps('Invalid command.')
         }
+
+def process_run_json(event, number_of_articles, get_summary):
+    logger.info(f"Processing JSON data with number_of_articles: {number_of_articles}, get_summary: {get_summary}")
+    articles_data = None
+
+    # Extract JSON data from the request body if present
+    if 'body' in event and event['body']:
+        try:
+            articles_data = json.loads(event['body'])
+            if not isinstance(articles_data, list) or not all(isinstance(item, dict) for item in articles_data):
+                logger.info("Invalid JSON format for articles data.")
+                return {
+                    'statusCode': 400,
+                    'body': json.dumps('Invalid JSON format for articles data.')
+                }
+        except json.JSONDecodeError:
+            logger.info("Invalid JSON provided in the request body.")
+            return {
+                'statusCode': 400,
+                'body': json.dumps('Invalid JSON format.')
+            }
+    else:
+        logger.info("JSON body is required for this endpoint.")
+        return {
+            'statusCode': 400,
+            'body': json.dumps('JSON body is required for this endpoint.')
+        }
+
+    logger.info(f"Articles Data: {articles_data}")
+
+    # Iterate over each article and create a payload to send to SQS
+    for article in articles_data:
+        issuer_name = article.get('name')
+        slug = article.get('slug')
+        company_id = article.get('company_id')
+        payload = {
+            'issuer_name': issuer_name,
+            'slug': slug,
+            'company_id': company_id,
+            'number_of_articles': number_of_articles,
+            'get_summary': get_summary,
+            'triggered_by': 'api'
+        }
+        send_message_to_sqs(payload)
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Messages sent to SQS successfully.')
+    }
 
 
 def process_run_all(event, number_of_articles, get_summary):
@@ -185,8 +236,18 @@ def process_run_s3_excel(event, number_of_articles, get_summary):
                     
                     # Extract the 'issuerKey' column, assuming it exists
                     if 'issuerKey' in df.columns:
-                        for issuer_name in df['issuerKey'].dropna().unique(): 
-                            payload = {'issuer_name': issuer_name, 'number_of_articles': number_of_articles, 'get_summary': get_summary, 'triggered_by': 'api'}
+                        for _, row in df.dropna(subset=['issuerKey']).iterrows():
+                            issuer_name = row['issuerKey']
+                            slug = row['slug']
+                            company_id = row['company_id']
+                            payload = {
+                                'issuer_name': issuer_name,
+                                'slug': slug,
+                                'company_id': company_id,
+                                'number_of_articles': number_of_articles,
+                                'get_summary': get_summary,
+                                'triggered_by': 'api'
+                            }
                             send_message_to_sqs(payload)
                             issuer_count += 1
                             logger.info(f"Enqueued message for {issuer_name} in SQS")

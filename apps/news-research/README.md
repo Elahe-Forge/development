@@ -49,7 +49,11 @@ The entire setup is defined and deployed using AWS CDK. See the Miro board for m
         ```
         curl -X POST "data-science-news-automation-dev.NewsApiURL/run-s3?number_of_articles=10&get_summary=true" -d "x"
         ```
-
+    - To run for issuers that are passed using the JSON data directly via the command line, run 
+        ```
+        curl -X POST "https://data-science.ApiURL/run-json?number_of_articles=10&get_summary=true" \-H "Content-Type: application/json" \-d '[{ "slug": "azul", "name": "Azul", "company_id": "FRG182554" },{ "slug": "oberia", "name": "Oberia", "company_id": "FRG182556" },{ "slug": "autonomous-supersonics", "name": "Autonomous Supersonics", "company_id": "FRG182559" }]'
+        ```
+    
 
 11. The news articles will be published as Parquet files in S3 bucket `data-science-news-output`
 

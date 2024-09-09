@@ -160,6 +160,7 @@ def store_in_dynamodb(data, table):
     Store the fetched news items in the DynamoDB table with conditional writes to prevent duplicates.
     """
     try:
+        data['company_name_link_date'] = f"{data['slug']}-{data['link']}-{data['date']}"
         response = table.put_item(
             Item=data,
             ConditionExpression='attribute_not_exists(company_name_link_date)'
@@ -182,15 +183,14 @@ def process_news(news_results, issuer_name, sqs_url, dynamodb_table, slug, compa
     """
     for item in news_results:
         try:
-            item['date'] = convert_relative_date_to_actual(item.get('date'))
-            item['company_name_link_date'] = f"{issuer_name}-{item.get('link')}-{item['date']}"
+            item['date'] = convert_relative_date_to_actual(item.get('date'))           
             item['issuer_name'] = issuer_name
             item['slug'] = slug
             item['company_id'] = company_id
             item['get_summary'] = get_summary
             item['triggered_by'] = triggered_by
 
-            if store_in_dynamodb(item, dynamodb_table):
+            if store_in_dynamodb(item.copy(), dynamodb_table):
                 send_to_sqs(sqs_url, {'news_item': item})
                 logger.info(f"Enqueued message for {issuer_name} in SQS")  
 

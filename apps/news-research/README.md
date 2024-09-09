@@ -37,21 +37,14 @@ The entire setup is defined and deployed using AWS CDK. See the Miro board for m
     - Deploy to Production Environment: `./deploy-prod.sh`
 
 10. After deployment, a `NEWSAPIEndpoint` will be returned as `data-science-news-automation-dev.NewsApiURL`. Use it to invoke the API. You can also customize (optional) the number of news articles (default is 10) and getting the summary (default is true).
-    - To run for all the issuers available in an athena table, run 
-        ```
-        curl -X POST "data-science-news-automation-dev.NewsApiURL/run-all?number_of_articles=10&get_summary=true"
-        ```
-    - To run for a specific issuer x, run 
-        ```
-        curl -X POST "data-science-news-automation-dev.NewsApiURL/run-issuer?number_of_articles=10&get_summary=true" -d "x"
-        ```
+    
     - To run for all issuers available in Excel file in folder x in S3 bucket `data-science-news-issuer-list`, run 
         ```
         curl -X POST "data-science-news-automation-dev.NewsApiURL/run-s3?number_of_articles=10&get_summary=true" -d "x"
         ```
     - To run for issuers that are passed using the JSON data directly via the command line, run 
         ```
-        curl -X POST "https://data-science.ApiURL/run-json?number_of_articles=10&get_summary=true" \-H "Content-Type: application/json" \-d '[{ "slug": "azul", "name": "Azul", "company_id": "FRG182554" },{ "slug": "oberia", "name": "Oberia", "company_id": "FRG182556" },{ "slug": "autonomous-supersonics", "name": "Autonomous Supersonics", "company_id": "FRG182559" }]'
+        curl -X POST "https://a9g9nnt3zb.execute-api.us-west-2.amazonaws.com/prod/run-json?number_of_articles=10&get_summary=true" \-H "Content-Type: application/json" \-d '[{ "slug": "azul", "name": "Azul", "company_id": "FRG182554" },{ "slug": "oberia", "name": "Oberia", "company_id": "FRG182556" },{ "slug": "autonomous-supersonics", "name": "Autonomous Supersonics", "company_id": "FRG182559" }]'
         ```
     
 

@@ -98,10 +98,6 @@ def process_api_gateway_event(event):
     path = event.get('resource')
     if path == '/run-json':
         return process_run_json(event, number_of_articles, get_summary)  
-    elif path == '/run-all':
-        return process_run_all(event, number_of_articles, get_summary)
-    elif path == '/run-issuer':
-        return process_run_issuer(event, number_of_articles, get_summary)
     elif path == '/run-s3':
         return process_run_s3_excel(event, number_of_articles, get_summary)
     else:
@@ -159,57 +155,7 @@ def process_run_json(event, number_of_articles, get_summary):
         'statusCode': 200,
         'body': json.dumps('Messages sent to SQS successfully.')
     }
-
-
-def process_run_all(event, number_of_articles, get_summary):
-    athena_database = os.environ['ATHENA_DATABASE']
-    athena_table = os.environ['ATHENA_TABLE']
-    athena_output_location = os.environ['S3_OUTPUT_LOCATION']
-    athena_query = f"""
-        SELECT name
-        FROM {athena_table}
-        LIMIT 10
-    """
-
-    query_result = query_athena_and_wait_for_results(athena_query, athena_database, athena_output_location)
-    
-    issuer_count = 0
-    for row in query_result['ResultSet']['Rows'][1:]:  # Skip the header row
-        issuer_name = row['Data'][0]['VarCharValue']
-        logger.info(f"issuer_name: {issuer_name}") 
-        try:
-            payload = {'issuer_name': issuer_name, 'number_of_articles': number_of_articles, 'get_summary': get_summary, 'triggered_by': 'api'}
-            send_message_to_sqs(payload)
-            issuer_count += 1
-            logger.info(f"Enqueued message for {issuer_name} in SQS")
-        except Exception as e:
-                logger.error(f"Error enqueuing message for {issuer_name}: {str(e)}")
-
-    return {
-        'statusCode': 200,
-        'body': json.dumps(f'Enqueued N={issuer_count} issuers.')
-    }
-
-
-def process_run_issuer(event, number_of_articles, get_summary):
-    issuer_name = event.get('body', '').strip()  # Extract issuer from the body
-    if issuer_name:
-        try:
-            payload = {'issuer_name': issuer_name, 'number_of_articles': number_of_articles, 'get_summary': get_summary, 'triggered_by': 'api'}
-            send_message_to_sqs(payload)
-            logger.info(f"Enqueued message for {issuer_name} in SQS")
-        except Exception as e:
-            logger.error(f"Error enqueuing message for {issuer_name}: {str(e)}")
-        return {
-            'statusCode': 200,
-            'body': json.dumps(f'Enqueued message for {issuer_name} in SQS')
-        }
-    else:
-        return {
-            'statusCode': 400,
-            'body': json.dumps('Issuer name is required for run-issuer command.')
-        }
-    
+   
 
 def process_run_s3_excel(event, number_of_articles, get_summary):
     s3_client = boto3.client('s3')

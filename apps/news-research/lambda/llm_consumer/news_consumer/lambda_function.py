@@ -9,9 +9,7 @@ import boto3
 import datetime
 from botocore.exceptions import ClientError
 import logging
-import pandas as pd
 from bs4 import BeautifulSoup
-import io 
 import re
 import requests
 import uuid
@@ -35,30 +33,25 @@ def process_records(records, llm_processor, model_name, model_version, s3_news_o
         try:
             if news_record['get_summary']:
                 metrics.insert(0, "summary") 
-            raw_news_text = get_raw_news_text(news_record['link'])
-            if raw_news_text:
-                results = {
-                    "summary": "",
-                    "reliability": "",
-                    "sentiment": "",
-                    "relevance": "",
-                    "controversy": "",
-                    "tags": ""
-                }
-                for metric in metrics:
-                    result = llm_processor.process_metric(metric, raw_news_text, source=news_record.get('source', ''))
-                    results[metric] = result
             
-                news_record.update(results)
-                news_record.update({'model_name': model_name, 'model_version': model_version, 'raw': raw_news_text})
-                persist_news_analysis(news_record, s3_news_output_bucket, f"{model_name}-{model_version}")
+            results = {}
+            raw_news_text = get_raw_news_text(news_record['link'])
+                            
+            for metric in metrics:
+                if raw_news_text:
+                    results[metric] = llm_processor.process_metric(metric, raw_news_text, source=news_record.get('source', ''))
+                else:
+                    results[metric] = None
+            
+            news_record.update(results)
+            news_record.update({'model_name': model_name, 'model_version': model_version, 'raw': raw_news_text})
+            persist_news_analysis(news_record, s3_news_output_bucket, f"{model_name}-{model_version}")
 
         except Exception as e:
             logger.error(f'Error processing news record: {news_record}, error: {e}')
 
 
 # Get the news from the url and strip out all html returning raw text
-#
 def get_raw_news_text(url : str) -> str: # throws http error if problems w/request
    # Send a GET request to the URL
     try:
@@ -89,22 +82,21 @@ def get_raw_news_text(url : str) -> str: # throws http error if problems w/reque
 
 def persist_news_analysis(news_records, s3_news_output_bucket, model_handle):
     """ 
-    Persist news analysis to S3 as Parquet. 
+    Persist news analysis to S3 as JSON. 
     """
     if news_records:  
         try:
             logger.info(f"news_records '{news_records}'")
-            issuer_name = news_records['issuer_name'].replace(" ", "_").lower()  # Replace spaces with underscores and convert to lowercase
+            issuer_name = news_records['issuer_name']
+            slug = news_records['slug']
+            company_id = news_records['company_id']
             timestamp = datetime.datetime.now()
             unique_id = uuid.uuid4()  # Generate a unique identifier to ensure uniqueness
-            
-            df = pd.DataFrame([news_records])
-            parquet_buffer = io.BytesIO()
-            df.to_parquet(parquet_buffer, index=False)
 
-            s3_prefix = model_handle + "-" + timestamp.strftime("%Y%m%d") + news_records['triggered_by']
-            s3_object_key = f'news-articles/{s3_prefix}/{issuer_name}/news_record_{timestamp.strftime("%Y%m%d%H%M%S%f")}_{unique_id}.parquet'
-            s3_client.put_object(Bucket=s3_news_output_bucket, Key=s3_object_key, Body=parquet_buffer.getvalue())
+            json_data = json.dumps(news_records)            
+            s3_prefix = timestamp.strftime("%Y%m%d") + "-" + model_handle 
+            s3_object_key = f'news-articles/{s3_prefix}/{slug}_{company_id}/news_record_{unique_id}.json'
+            s3_client.put_object(Bucket=s3_news_output_bucket, Key=s3_object_key, Body=json_data)
             
             logger.info(f"Persisted record for issuer '{issuer_name}' to S3 bucket '{s3_news_output_bucket}' with key '{s3_object_key}'")
         except ClientError as e:

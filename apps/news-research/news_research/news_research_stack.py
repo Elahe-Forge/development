@@ -280,22 +280,6 @@ class NewsResearchStack(Stack):
             }
         )
 
-        # Resource for running all companies
-        run_all_resource = api.root.add_resource('run-all')
-        run_all_resource.add_method('POST', request_parameters={
-                'method.request.querystring.number_of_articles': False,  
-                'method.request.querystring.get_summary': False           
-            }
-        )
-
-        # Resource for running a specific issuer
-        run_issuer_resource = api.root.add_resource('run-issuer')
-        run_issuer_resource.add_method('POST', request_parameters={
-                'method.request.querystring.number_of_articles': False,  
-                'method.request.querystring.get_summary': False           
-            }
-        )
-
         # Resource for running an excel sheet from s3
         run_s3_resource = api.root.add_resource('run-s3')
         run_s3_resource.add_method('POST', request_parameters={
@@ -303,7 +287,6 @@ class NewsResearchStack(Stack):
                 'method.request.querystring.get_summary': False           
             }
         )
-
 
         S3_icms_bucket = "fg-acceptance-issuersapp-extracts" if env_name =='dev' else "fg-prod-issuersapp-extracts"
         

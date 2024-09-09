@@ -25,7 +25,7 @@ def load_prompts_from_s3(version, s3_news_prompts_bucket):
     Access prompt json file from S3 bucket
     """
     s3 = boto3.client('s3')
-    file_key = f'prompts/{version}/prompts.json'
+    file_key = f'{version}/prompts.json'
 
     try:
         response = s3.get_object(Bucket=s3_news_prompts_bucket, Key=file_key)

@@ -1,5 +1,5 @@
-import collections
-import json
+# import collections
+# import json
 import re
 from io import BytesIO
 
@@ -7,7 +7,8 @@ import boto3
 import helpers.utils as utils
 import pandas as pd
 from helpers.fields import other_fields, precise_fields, raw_fields
-from helpers.readers import DocumentReader
+
+# from helpers.readers import DocumentReader
 from openpyxl import load_workbook
 from openpyxl.comments import Comment
 
@@ -135,6 +136,25 @@ def generate_precise_df(bucket, json_data):
         }
     )
 
+    column_order = [
+        "shares_type",
+        "preferred_shares",
+        "issue_price",
+        "$_invested",
+        "conversion_price",
+        "conversion_ratio",
+        "liq_pref",
+        "liq_pref_order",
+        "participation_rights",
+        "cap",
+        "dividend_pct",
+        "dividend_per_share",
+        "cumulative",
+        "authorized",
+    ]
+    df = df[column_order]
+    print(df.columns)
+
     return df, preferred_shares_list  # Return the DataFrame and preferred shares list
 
 
@@ -155,9 +175,12 @@ def convert_pandas_to_excel(bucket, df, dfs, output_dict, json_data):
     author = "coi-reader"  # Author name for comments
 
     # Loop through each row and column in the `dfs` DataFrame to add comments
-    for row_idx in range(dfs.shape[0]):  # Loop over rows
-        for col_idx in range(dfs.shape[1]):  # Loop over columns
 
+    for row_idx in range(dfs.shape[0]):  # Loop over rows
+        adj_col_idx = 1  # Adjustment to match comments to correct cell
+        for col_idx in range(dfs.shape[1]):  # Loop over columns
+            if col_idx in [3, 4]:
+                adj_col_idx += 1  # adjusting to account for computed cells without comments ($_invested, conversion_ratio)
             comment_text = dfs.iloc[row_idx, col_idx]  # Get comment text
             len_comment_text = len(comment_text)  # Calculate comment length
 
@@ -168,13 +191,13 @@ def convert_pandas_to_excel(bucket, df, dfs, output_dict, json_data):
 
             # Map Pandas DataFrame coordinates to Excel cell positions
             cell = ws.cell(
-                row=row_idx + 2, column=col_idx + 1
+                row=row_idx + 2, column=col_idx + adj_col_idx
             )  # Offset by +2 due to Excel's 1-based index and a header row
             cell.comment = comment  # Attach the comment to the cell
 
     # Format specific columns (e.g., set number format to two decimal places)
     for row_idx in range(dfs.shape[0]):  # Loop over rows
-        for col_idx in [2, 14]:  # Loop over specific columns
+        for col_idx in [2, 4]:  # Loop over specific columns
             # Map Pandas DataFrame coordinates to Excel cell positions
             cell = ws.cell(row=row_idx + 2, column=col_idx)  # Offset by +2
             cell.number_format = "#,##0"  # Set the number format
@@ -314,6 +337,22 @@ def generate_support_df(bucket, json_data, preferred_shares_list):
     df = (
         df.sort_values("share_name").reset_index(drop=True).drop(columns=["share_name"])
     )
+
+    column_order = [
+        "shares_type",
+        "preferred_shares",
+        "issue_price",
+        "conversion_price",
+        "liq_pref",
+        "liq_pref_order",
+        "participation_rights",
+        "participation_cap",
+        "dividend_pct",
+        "dividend_per_share",
+        "dividend_cumulative",
+    ]
+
+    df = df[column_order]
 
     return df  # Return the resulting DataFrame
 

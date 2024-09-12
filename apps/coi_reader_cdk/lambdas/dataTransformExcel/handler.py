@@ -1,25 +1,30 @@
 import json
+import os
 
+import boto3
 import helpers.transformers as transformers
 import helpers.utils as utils
-from openpyxl import load_workbook
-from openpyxl.comments import Comment
+from dotenv import load_dotenv
+
+# from openpyxl import load_workbook
+# from openpyxl.comments import Comment
+
+load_dotenv()
 
 
 def handler(event, context):
 
-    if "test" in event:
-        bucket = event["bucket"]
-        key = event["key"]
-    else:
-        bucket = event["Records"][0]["s3"]["bucket"]["name"]
-        key = event["Records"][0]["s3"]["object"]["key"]
+    ses_client = boto3.client("ses")
+
+    bucket = event["Records"][0]["s3"]["bucket"]["name"]
+    key = event["Records"][0]["s3"]["object"]["key"]
+    # if space in filename, event inserts '+'. This leads to job failure since filename cannot be found.
+    key = key.replace("+", " ")
+    print(bucket, key)
+
+    filename = key.split("/")[2]
 
     try:
-        # if space in filename, event inserts '+'. This leads to job failure since filename cannot be found.
-        key = key.replace("+", " ")
-        print(bucket, key)
-
         json_data = utils.load_s3_json_obj(bucket, key)  # load config file from event
 
         precise_df, preferred_shares_list = transformers.generate_precise_df(
@@ -45,15 +50,46 @@ def handler(event, context):
     except Exception as e:
         print(f"Error process transform: {e}")
 
-        return {"statusCode": 500, "body": json.dumps("Data extraction NOT complete!")}
+        SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+        TO_RECIPIENTS_EMAIL = os.getenv("TO_RECIPIENTS_EMAIL")
+
+        subject = f"Data Transform Excel Error - {filename}"
+        body = f"Error: {e}"
+
+        message = {"Subject": {"Data": subject}, "Body": {"Html": {"Data": body}}}
+
+        # Send the email
+        ses_client.send_email(
+            Source=SENDER_EMAIL,
+            Destination={
+                "ToAddresses": [
+                    TO_RECIPIENTS_EMAIL,
+                ]
+            },
+            Message=message,
+        )
+
+        print("Email sent")
+
+        return {"statusCode": 501, "body": json.dumps("Data extraction NOT complete!")}
 
 
 # For testing purposes
-# if __name__ == "__main__":
-#     event = {
-#         "bucket": "coi-reader-dev-coireaderdeve59305f7-bdrj9eeywtdz",
-#         "key": "outputs/config_json/tae-technologies 2024-08-23 COI/gpt-4o/config.json",
-#         "test": 1,
-#     }
+if __name__ == "__main__":
 
-#     handler(event, "context")
+    event = {
+        "Records": [
+            {
+                "s3": {
+                    "bucket": {
+                        "name": "coi-reader-dev-coireaderdeve59305f7-bdrj9eeywtdz"
+                    },
+                    "object": {
+                        "key": "outputs/config_json/tae-technologies 2024-08-23 COI/gpt-4o/config.json"
+                    },
+                }
+            }
+        ]
+    }
+
+    handler(event, None)

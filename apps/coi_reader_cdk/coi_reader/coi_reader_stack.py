@@ -3,6 +3,7 @@ from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as _lambda
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_s3_notifications as s3n
+from aws_cdk import aws_ses as ses
 from aws_cdk.aws_lambda_python_alpha import PythonFunction
 from constructs import Construct
 
@@ -65,6 +66,14 @@ class CoiReaderStack(Stack):
             )
         )
 
+        # Grant SES permissions
+        pdf_textract_lambda_fxn.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["ses:SendEmail"],
+                resources=["*"],  # You can specify SES identities if needed
+            )
+        )
+
         # Grant Lambda function permissions to read from the bucket
         bucket.grant_read(pdf_textract_lambda_fxn)
 
@@ -115,12 +124,20 @@ class CoiReaderStack(Stack):
             )
         )
 
+        # Grant SES permissions
+        data_extract_lambda_fxn.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["ses:SendEmail"],
+                resources=["*"],  # You can specify SES identities if needed
+            )
+        )
+
         # Grant Lambda permission to access Secrets Manager
         data_extract_lambda_fxn.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["secretsmanager:GetSecretValue"],
                 resources=[
-                    f"arn:aws:secretsmanager:{env_region}:{env_account}:secret:data-science-and-ml-models/openai-Sc0RKh"
+                    f"arn:aws:secretsmanager:{env_region}:{env_account}:secret:coi-non-prod/openai-RU8j8Y"
                 ],
             )
         )
@@ -163,12 +180,20 @@ class CoiReaderStack(Stack):
             )
         )
 
+        # Grant SES permissions
+        data_transform_excel_lambda_fxn.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["ses:SendEmail"],
+                resources=["*"],  # You can specify SES identities if needed
+            )
+        )
+
         # Grant Lambda permission to access Secrets Manager
         data_transform_excel_lambda_fxn.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["secretsmanager:GetSecretValue"],
                 resources=[
-                    f"arn:aws:secretsmanager:{env_region}:{env_account}:secret:data-science-and-ml-models/openai-Sc0RKh"
+                    f"arn:aws:secretsmanager:{env_region}:{env_account}:secret:coi-non-prod/openai-RU8j8Y"
                 ],
             )
         )
@@ -187,10 +212,48 @@ class CoiReaderStack(Stack):
             s3.NotificationKeyFilter(prefix="outputs/config_json/", suffix=".json"),
         )
 
-        # # Set up the S3 bucket notification to trigger the Lambda function
-        # pdf_textract_notification = s3n.LambdaDestination(pdf_textract_lambda_fxn)
-        # bucket.add_event_notification(
-        #     s3.EventType.OBJECT_CREATED,
-        #     pdf_textract_notification,
-        #     s3.NotificationKeyFilter(prefix="inputs/pdfs/", suffix=".pdf"),
-        # )
+        ## EMAIL EXCEL LAMBDA FUNCTION
+        # Create the Lambda function
+        email_excel_lambda_fxn = PythonFunction(
+            self,
+            "EmailExcelFunction",
+            entry="lambdas/emailExcel",
+            runtime=_lambda.Runtime.PYTHON_3_10,
+            index="handler.py",
+            handler="handler",
+            architecture=_lambda.Architecture.ARM_64,
+            memory_size=1024,
+            timeout=Duration.seconds(600),
+            environment={"BUCKET_NAME": bucket.bucket_name},
+        )
+
+        email_excel_lambda_fxn.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "s3:ListBucket",
+                    "s3:GetObject",
+                    "s3:PutObject",
+                    "s3:GetBucketLocation",
+                ],
+                resources=[f"{bucket.bucket_arn}/*"],
+            )
+        )
+
+        # Grant SES permissions
+        email_excel_lambda_fxn.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["ses:SendEmail", "ses:SendRawEmail"],
+                resources=["*"],  # You can specify SES identities if needed
+            )
+        )
+
+        # Grant Lambda function permissions to read from the bucket
+        bucket.grant_read(email_excel_lambda_fxn)
+
+        # Set up the S3 bucket notification to trigger the Lambda function
+        email_excel_notification = s3n.LambdaDestination(email_excel_lambda_fxn)
+        bucket.add_event_notification(
+            s3.EventType.OBJECT_CREATED,
+            email_excel_notification,
+            s3.NotificationKeyFilter(prefix="outputs/excel/", suffix=".xlsx"),
+        )

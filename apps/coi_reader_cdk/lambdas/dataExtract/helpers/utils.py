@@ -42,6 +42,7 @@ def save_output_s3(bucket_name, file_key, content, json_file=False):
         print(f"File uploaded successfully to s3://{bucket_name}/{file_key}")
     except Exception as e:
         print(f"Error uploading txt file to s3://{bucket_name}/{file_key}: {e}")
+        raise e
 
 
 # Define a function to remove trailing commas from JSON-like strings

@@ -1,4 +1,5 @@
 import json
+import os
 import types
 
 import boto3
@@ -13,9 +14,10 @@ import templates.liq_pref_templates as liq_pref_templates
 import templates.participation_cap_templates as participation_cap_templates
 import templates.participation_rights_templates as participation_rights_templates
 import templates.preferred_shares_templates as preferred_share_names_templates
+from dotenv import load_dotenv
 from helpers.readers import DocumentReader
 
-s3_client = boto3.client("s3")
+load_dotenv()
 
 
 def run_extract(
@@ -64,6 +66,7 @@ s3_client = boto3.client("s3")
 
 
 def read_s3_text_file(bucket_name, file_key):
+    s3_client = boto3.client("s3")
     try:
         # Get the object from S3
         response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
@@ -74,24 +77,23 @@ def read_s3_text_file(bucket_name, file_key):
         return file_content
     except Exception as e:
         print(f"Error reading file from S3: {e}")
-        return None
+        raise e
 
 
 def handler(event, context):
-    if "test" in event:
-        bucket = event["bucket"]
-        key = event["key"]
-    else:
-        bucket = event["Records"][0]["s3"]["bucket"]["name"]
-        key = event["Records"][0]["s3"]["object"]["key"]
+
+    ses_client = boto3.client("ses")
+
+    bucket = event["Records"][0]["s3"]["bucket"]["name"]
+    key = event["Records"][0]["s3"]["object"]["key"]
+    # if space in filename, event inserts '+'. This leads to job failure since filename cannot be found.
+    key = key.replace("+", " ")
+
+    print(bucket, key)
+
+    filename = key.split("/")[-1].split(".txt")[0]
 
     try:
-        # if space in filename, event inserts '+'. This leads to job failure since filename cannot be found.
-        key = key.replace("+", " ")
-
-        print(bucket, key)
-
-        filename = key.split("/")[-1].split(".txt")[0]
         document_txt = read_s3_text_file(bucket, key)
 
         model_id = "gpt-4o"
@@ -155,7 +157,50 @@ def handler(event, context):
 
     except Exception as e:
         print(f"Error in extract data from txt file: {e}")
+        SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+        TO_RECIPIENTS_EMAIL = os.getenv("TO_RECIPIENTS_EMAIL")
+
+        # sender = "elahe.paikari@forgeglobal.com"
+        # recipient = "bo.brandt@forgeglobal.com"
+        subject = f"Data Extraction Error - {filename}"
+        body = f"Error: {e}"
+
+        message = {"Subject": {"Data": subject}, "Body": {"Html": {"Data": body}}}
+
+        # Send the email
+        ses_client.send_email(
+            Source=SENDER_EMAIL,
+            Destination={
+                "ToAddresses": [
+                    TO_RECIPIENTS_EMAIL,
+                ]
+            },
+            Message=message,
+        )
+
+        print("Email sent")
+
         return {
             "statusCode": 501,
             "body": json.dumps("Error! Data extraction did not complete!"),
         }
+
+
+# For testing purposes
+if __name__ == "__main__":
+
+    event = {
+        "Records": [
+            {
+                "s3": {
+                    "bucket": {
+                        "name": "coi-reader-dev-coireaderdeve59305f7-bdrj9eeywtdz"
+                    },
+                    "object": {
+                        "key": "outputs/document_txts/goforward 2024-08-05 COI.txt"
+                    },
+                }
+            }
+        ]
+    }
+    handler(event, None)

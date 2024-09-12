@@ -1,58 +1,44 @@
+# News Research Project
+This AWS-based project operates on a serverless architecture, primarily using S3 and Lambda functions, orchestrated through AWS CDK. The central mechanism involves four Lambda functions: a function that extracts text from an uploaded Certificate of Incorporation (COI) pdf, a function that reads COI's using LLMs to extract data, a function that transforms the extracted data into an Excel workbook, and a function that emails the Excel workbook to our stakeholders. The lambda functions are each triggered when an object is created in S3.
 
-# Welcome to your CDK Python project!
+The entire setup is defined and deployed using AWS CDK. See the Miro board for more info and the arch design: https://miro.com/app/board/uXjVNs714WI=/
 
-This is a blank project for CDK development with Python.
+## Steps to Run
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+1. Install Python version 3.9 or later
 
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
+2. Install Node.js and npm
+    - AWS CDK is developed in Node.js, so you need to install Node.js and npm.
 
-To manually create a virtualenv on MacOS and Linux:
+3. Install AWS Command Line Interface (CLI)
+    - Once installed, configure it by running:
+        - non-production: `aws configure --profile dev`
+        
+    - Enter your AWS Access Key ID, Secret Access Key, default region name, and default output format. These credentials are available in your AWS Management Console under IAM (Identity and Access Management).
+    - Add `AdministratorAccess` in your user's permission policy.
+    
 
-```
-$ python3 -m venv .venv
-```
+4. Clone the Repository
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
+5. Create a virtualenv (or a container)
+    - Run `python3 -m venv .env` in the terminal.
 
-```
-$ source .venv/bin/activate
-```
+6. Activate your virtualenv
+    - Run `source .env/bin/activate` in the terminal.
 
-If you are a Windows platform, you would activate the virtualenv like this:
+7. Install the dependencies 
+    - Run `pip install -r requirements.txt` in the terminal.
 
-```
-% .venv\Scripts\activate.bat
-```
+8. Make sure the Docker is up and running
 
-Once the virtualenv is activated, you can install the required dependencies.
-
-```
-$ pip install -r requirements.txt
-```
-
-At this point you can now synthesize the CloudFormation template for this code.
-
-```
-$ cdk synth
-```
-
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
+9. Deploy the Stack
+    - Deploy to Development Environment: `./deploy-dev.sh`
 
 ## Useful commands
 
- * `cdk ls`          list all stacks in the app
+ * `cat ~/.aws/credentials`  lists the credentials set for each profile:
+ * `cdk ls`          lists all stacks in the app
  * `cdk synth`       emits the synthesized CloudFormation template
  * `cdk deploy`      deploy this stack to your default AWS account/region
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation
-
-Enjoy!

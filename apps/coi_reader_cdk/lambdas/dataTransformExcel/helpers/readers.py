@@ -26,7 +26,7 @@ def get_secret(secret_name, region_name):
     return secret
 
 
-OPENAI_API_KEY = get_secret("data-science-and-ml-models/openai", "us-west-2")
+OPENAI_API_KEY = get_secret("coi-non-prod/openai", "us-west-2")
 
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 

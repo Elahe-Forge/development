@@ -6,3 +6,4 @@ langchain-aws
 langchain-core
 langchain-openai
 boto3
+python-dotenv

@@ -72,9 +72,6 @@ def get_google_news(issuer_name, number_of_articles, secret, only_trusted_sites)
     Fetch news for each company using SerpAPI.
     """
     try:
-        trusted_sites = get_trusted_sites()    
-        sites_query = " OR ".join([f"site:{site}" for site in trusted_sites])
-     
         params = {
             "engine": "google",
             "google_domain": "google.com",
@@ -87,6 +84,8 @@ def get_google_news(issuer_name, number_of_articles, secret, only_trusted_sites)
         
         # Add trusted sites to the query if only_trusted_sites is 'Y'
         if only_trusted_sites == 'Y':
+            trusted_sites = get_trusted_sites()    
+            sites_query = " OR ".join([f"site:{site}" for site in trusted_sites])
             params["q"] += f" ({sites_query})"
         
         search = GoogleSearch(params)
@@ -181,6 +180,7 @@ def process_news(news_results, issuer_name, sqs_url, dynamodb_table, slug, compa
     """
     Process multiple news_results: check existence, store new in S3, and send to SQS.
     """
+    enqueued_items = []
     for item in news_results:
         try:
             item['date'] = convert_relative_date_to_actual(item.get('date'))           
@@ -191,11 +191,16 @@ def process_news(news_results, issuer_name, sqs_url, dynamodb_table, slug, compa
             item['triggered_by'] = triggered_by
 
             if store_in_dynamodb(item.copy(), dynamodb_table):
-                send_to_sqs(sqs_url, {'news_item': item})
-                logger.info(f"Enqueued message for {issuer_name} in SQS")  
+                enqueued_items.append(item)  # Add to the list of items to send to SQS
+                logger.info(f"Stored in DynamoDB and enqueued for SQS for {issuer_name}")
 
         except Exception as e:
             logger.error(f"Error processing news for {issuer_name}: {e}")
+
+    if enqueued_items:
+        send_to_sqs(sqs_url, {'news_items': enqueued_items})
+        logger.info(f"Enqueued {len(enqueued_items)} news items for {issuer_name} in SQS")
+
 
 def handler(event, context):
     serpapi_secret_key = json.loads(get_serpapi_secret())

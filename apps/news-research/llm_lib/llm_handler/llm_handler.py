@@ -104,9 +104,12 @@ class ClaudeProcessor:
                 if match:
                     return match.group()
                 return completion  # Handle non-numerical completion gracefully 
-            elif metric_name in ["summary", "tags"]:
-                # Attempt to clean up the completion
+            elif metric_name == "summary":
                 return self.clean_phrase(completion)
+            elif metric_name == "tags":
+                cleaned_phrase = self.clean_phrase(completion)   
+                if isinstance(cleaned_phrase, str):
+                    return [tag.strip() for tag in cleaned_phrase.split(",")]
             else:
                 return None
         except Exception as e:

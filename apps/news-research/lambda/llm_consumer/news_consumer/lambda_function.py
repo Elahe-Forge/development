@@ -45,11 +45,12 @@ def process_records(records, llm_processor, model_name, model_version, s3_news_o
             
             news_record.update(results)
             news_record.update({'model_name': model_name, 'model_version': model_version, 'raw': raw_news_text})
-            persist_news_analysis(news_record, s3_news_output_bucket, f"{model_name}-{model_version}")
+            
 
         except Exception as e:
             logger.error(f'Error processing news record: {news_record}, error: {e}')
-
+    
+    persist_news_analysis(records, s3_news_output_bucket, f"{model_name}-{model_version}")
 
 # Get the news from the url and strip out all html returning raw text
 def get_raw_news_text(url : str) -> str: # throws http error if problems w/request
@@ -82,28 +83,30 @@ def get_raw_news_text(url : str) -> str: # throws http error if problems w/reque
 
 def persist_news_analysis(news_records, s3_news_output_bucket, model_handle):
     """ 
-    Persist news analysis to S3 as JSON. 
+    Persist a list of news records to S3 as a single JSON file. 
     """
-    if news_records:  
+    if news_records and isinstance(news_records, list):  
         try:
-            logger.info(f"news_records '{news_records}'")
-            issuer_name = news_records['issuer_name']
-            slug = news_records['slug']
-            company_id = news_records['company_id']
+            logger.info(f"Persisting {len(news_records)} news records")
+
+            first_record = news_records[0]
+            issuer_name = first_record['issuer_name']
+            slug = first_record['slug']
+            company_id = first_record['company_id']
             timestamp = datetime.datetime.now()
             unique_id = uuid.uuid4()  # Generate a unique identifier to ensure uniqueness
 
-            json_data = json.dumps(news_records)            
+            json_data = json.dumps(news_records)
             s3_prefix = timestamp.strftime("%Y%m%d") + "-" + model_handle 
-            s3_object_key = f'news-articles/{s3_prefix}/{slug}_{company_id}/news_record_{unique_id}.json'
+            s3_object_key = f'news-articles/{s3_prefix}/{slug}_{company_id}/news_records_{unique_id}.json'
             s3_client.put_object(Bucket=s3_news_output_bucket, Key=s3_object_key, Body=json_data)
             
-            logger.info(f"Persisted record for issuer '{issuer_name}' to S3 bucket '{s3_news_output_bucket}' with key '{s3_object_key}'")
+            logger.info(f"Persisted {len(news_records)} records for issuer '{issuer_name}' to S3 bucket '{s3_news_output_bucket}' with key '{s3_object_key}'")
         except ClientError as e:
-            logger.error(f"Failed to persist record for issuer '{issuer_name}' to S3 bucket '{s3_news_output_bucket}': {e}")
+            logger.error(f"Failed to persist records for issuer '{issuer_name}' to S3 bucket '{s3_news_output_bucket}': {e}")
         except Exception as e:
-            logger.error(f"Unexpected error occurred while persisting record for issuer '{issuer_name}': {e}")
-    
+            logger.error(f"Unexpected error occurred while persisting records for issuer '{issuer_name}': {e}")
+
 
 
 def initialize_llm_processor(model_name, model_handle, s3_news_prompts_bucket, prompt_version):
@@ -129,7 +132,7 @@ def handler(event, context):
         logger.info(f"Record: '{record}'")
         message_body = json.loads(record['body'])
         
-        process_records([message_body['news_item']], llm_processor, model_name, model_version, s3_news_output_bucket)
+        process_records(message_body['news_items'], llm_processor, model_name, model_version, s3_news_output_bucket)
         
 
     return {'status': 'Processing complete'}

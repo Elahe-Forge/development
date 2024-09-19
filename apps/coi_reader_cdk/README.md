@@ -1,4 +1,5 @@
-# News Research Project
+# Certificate of Incorporation (COI) Reader
+
 This AWS-based project operates on a serverless architecture, primarily using S3 and Lambda functions, orchestrated through AWS CDK. The central mechanism involves four Lambda functions: a function that extracts text from an uploaded Certificate of Incorporation (COI) pdf, a function that reads COI's using LLMs to extract data, a function that transforms the extracted data into an Excel workbook, and a function that emails the Excel workbook to our stakeholders. The lambda functions are each triggered when an object is created in S3.
 
 The entire setup is defined and deployed using AWS CDK. See the Miro board for more info and the arch design: https://miro.com/app/board/uXjVNs714WI=/

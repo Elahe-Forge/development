@@ -26,7 +26,8 @@ precise_extract_template = """
 You are a helpful assistant. I want you to extract and reformat certain items from the document provided (see document XML tags).
 
 Below are the items to change with specific instructions.
-1. "preferred_share_names": Remove extraneous words like 'Preferred Stock'. The output should only contain "Series" and the name (i.e., Series A, Series B, Series C-1)
+1. Keep "preferred_share_names"
+2. Remove "preferred_share_names_supporting_text"
 
 The final answer should contain the updated json object in a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":{output_format}
 

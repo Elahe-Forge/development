@@ -12,9 +12,6 @@ from helpers.fields import other_fields, precise_fields, raw_fields
 from openpyxl import load_workbook
 from openpyxl.comments import Comment
 
-# Define a regex pattern to match preferred share names - used in precise_output_df and support_output_df
-regex_pattern = r"\b(?:[A-Z]+(?:\d+)?(?:\([A-Z0-9]+\))?(?:-[A-Z0-9]+)*|Seed|(\d+))\b"
-
 
 def generate_precise_df(bucket, json_data):
     # Extract model ID from the JSON data
@@ -53,18 +50,11 @@ def generate_precise_df(bucket, json_data):
         else:
             # Process other fields
             for pref_share_name in preferred_shares_list:
-                pattern = re.compile(regex_pattern)  # Compile regex pattern
-                pattern_pref_share_name = pattern.search(
-                    pref_share_name
-                ).group()  # Extract the pattern match
 
                 matched = 0
                 for pref_share_name_k, v in json_obj[dict["key_name"]].items():
-                    pattern_pref_share_name_k = pattern.search(
-                        pref_share_name_k
-                    ).group()  # Extract the pattern match
 
-                    if pattern_pref_share_name == pattern_pref_share_name_k:
+                    if pref_share_name == pref_share_name_k:
                         data_extract_value = v[dict["data_extract"]]
                         if field == "preferred_shares":
                             # Convert preferred shares to int if necessary
@@ -92,17 +82,23 @@ def generate_precise_df(bucket, json_data):
 
     # Function to calculate dividend percentage
     def dividend_pct_calc(pct, per_share, issue_price):
-        if pct == 0:
-            return per_share / issue_price
-        else:
-            return float(pct)
+        try:
+            if pct == 0:
+                return per_share / issue_price
+            else:
+                return float(pct)
+        except:
+            return 0
 
     # Function to calculate dividend per share
     def dividend_per_share_calc(pct, per_share, issue_price):
-        if per_share == 0:
-            return issue_price * float(pct)
-        else:
-            return float(per_share)
+        try:
+            if per_share == 0:
+                return issue_price * float(pct)
+            else:
+                return float(per_share)
+        except:
+            return 0
 
     # Apply functions to compute new DataFrame columns
     df["dividend_pct"] = df.apply(
@@ -111,7 +107,6 @@ def generate_precise_df(bucket, json_data):
         ),
         axis=1,
     )
-
     df["dividend_per_share"] = df.apply(
         lambda row: dividend_per_share_calc(
             row["dividend_pct"], row["dividend_per_share"], row["issue_price"]
@@ -119,8 +114,14 @@ def generate_precise_df(bucket, json_data):
         axis=1,
     )
 
+    def conversion_ratio_calc(issue_price, conversion_price):
+        try:
+            return issue_price / conversion_price
+        except:
+            return 0
+
     df["conversion_ratio"] = df.apply(
-        lambda row: row["issue_price"] / row["conversion_price"],
+        lambda row: conversion_ratio_calc(row["issue_price"], row["conversion_price"]),
         axis=1,
     )
 
@@ -153,7 +154,6 @@ def generate_precise_df(bucket, json_data):
         "authorized",
     ]
     df = df[column_order]
-    print(df.columns)
 
     return df, preferred_shares_list  # Return the DataFrame and preferred shares list
 
@@ -295,20 +295,13 @@ def generate_support_df(bucket, json_data, preferred_shares_list):
 
             # Iterate over the preferred shares list
             for pref_share_name in preferred_shares_list:
-                pattern = re.compile(regex_pattern)
-                # Extract the pattern match for the current preferred share name
-                pattern_pref_share_name = pattern.search(pref_share_name).group()
 
                 matched = 0  # Initialize a variable to track if a match is found
                 # Iterate over the key-value pairs in the JSON object
                 for pref_share_name_k, v in json_obj[dict["key_name"]].items():
-                    # Extract the pattern match for the current key in the JSON object
-                    pattern_pref_share_name_k = pattern.search(
-                        pref_share_name_k
-                    ).group()
 
                     # Check if the extracted patterns match
-                    if pattern_pref_share_name == pattern_pref_share_name_k:
+                    if pref_share_name == pref_share_name_k:
                         data_extract_value = v[
                             dict["data_extract"]
                         ]  # Extract the required data
@@ -363,7 +356,6 @@ def extract_other_fields_dict(bucket, json_data):
     extract_type_list = ["raw", "precise"]  # List of extraction types to iterate over
 
     path_key = "raw_output_path"  # Key to access the output path in the JSON data
-    # columns = ["share_name"]
     output_dict = {}  # Initialize an empty dictionary to store the extracted data
 
     # Iterate over the fields to extract, defined in a global `other_fields` dictionary

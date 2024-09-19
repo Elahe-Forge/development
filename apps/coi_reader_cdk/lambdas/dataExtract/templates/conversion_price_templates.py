@@ -30,8 +30,7 @@ You are a helpful assistant. I want you to extract and reformat certain items fr
 
 Below are the items to change with specific instructions.
 1. Remove all supporting text fields
-2. "preferred_stock_names": Remove extraneous words like 'Preferred Stock'. The output should only contains the series name (i.e., Series A, Series B, Series C-1)
-3. "conversion_price_per_preferred_stock": Extract value from conversion_price field and convert value to float. If no value retun 'Not found'.
+2. "conversion_price_per_preferred_stock": Extract value from conversion_price field and convert value to float. If no value retun 'Not found'.
 
 The final answer should contain the updated json object in a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":{output_format}
 

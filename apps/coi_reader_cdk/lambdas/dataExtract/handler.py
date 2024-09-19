@@ -1,5 +1,7 @@
 import json
 import os
+import re
+
 import types
 
 import boto3
@@ -58,7 +60,7 @@ def run_extract(
 
     precise_output_path = f"{output_path}/{precise_label}/data.txt"
     utils.save_output_s3(bucket, precise_output_path, precise_response.content)
-    return precise_response.content, raw_output_path, precise_output_path
+    return raw_response.content, raw_output_path, precise_output_path
 
 
 # Create an S3 client
@@ -99,11 +101,10 @@ def handler(event, context):
         model_id = "gpt-4o"
         output_path = f"outputs/data_extracts/{filename}/{model_id}"
 
-        # create a for loop to run extracts...
         inputs = [
-            ["company_shares", company_shares_templates, False],
             ["preferred_share_names", preferred_share_names_templates, False],
             ["dates", dates_templates, False],
+            ["company_shares", company_shares_templates, True],
             ["issue_price", issue_price_templates, True],
             ["conversion_price", conversion_price_templates, True],
             ["dividends", dividend_templates, True],
@@ -118,6 +119,7 @@ def handler(event, context):
             "model_id": model_id,
             "document_txt_path": f"s3://{bucket}/{key}",
         }
+        # Loop through fields and run data extracts
         for i in inputs[:]:
             label = i[0]
             templates = i[1]
@@ -145,10 +147,15 @@ def handler(event, context):
 
             # Extract and save preferred_shares_data
             if label == "preferred_share_names":
-                preferred_shares_data = data_extract
-                print("preferred shares SAVED")
 
-            print(f"{label} DONE")
+                # Regex pattern to capture the 'preferred_shares_per_preferred_stock' section
+                pattern = r'"preferred_share_names": \[(.*?)\]'
+
+                # Extract the preferred_shares_per_preferred_stock section
+                match = re.search(pattern, data_extract, re.DOTALL)
+                preferred_shares_str = f"[{match.group(1)}]"
+                preferred_shares_data = eval(preferred_shares_str)
+                print("preferred shares stored")
 
         config_output_path = f"outputs/config_json/{filename}/{model_id}/config.json"
         utils.save_output_s3(bucket, config_output_path, config_output, json_file=True)
@@ -160,8 +167,6 @@ def handler(event, context):
         SENDER_EMAIL = os.getenv("SENDER_EMAIL")
         TO_RECIPIENTS_EMAIL = os.getenv("TO_RECIPIENTS_EMAIL")
 
-        # sender = "elahe.paikari@forgeglobal.com"
-        # recipient = "bo.brandt@forgeglobal.com"
         subject = f"Data Extraction Error - {filename}"
         body = f"Error: {e}"
 
@@ -197,7 +202,7 @@ if __name__ == "__main__":
                         "name": "coi-reader-dev-coireaderdeve59305f7-bdrj9eeywtdz"
                     },
                     "object": {
-                        "key": "outputs/document_txts/goforward 2024-08-05 COI.txt"
+                        "key": "outputs/document_txts/invisible-technologies 2024-05-14 COI.txt"
                     },
                 }
             }

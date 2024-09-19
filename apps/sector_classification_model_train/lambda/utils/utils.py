@@ -41,7 +41,7 @@ def load_model_parameters(config_data: dict, bucket: str, job_id: int) -> dict:
         train_batch_size = 8
         learning_rate = 5e-5
         weight_decay = 0
-        experiment_name = f"sector-classification-experiments-v0"
+        experiment_name = f"sector-classification-experiments-v1"
         train_input_path = (
             "s3://team-orange-datasets/sector-subsector-classification-alden-curated/train/",
         )

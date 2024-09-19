@@ -6,9 +6,6 @@ import helpers.transformers as transformers
 import helpers.utils as utils
 from dotenv import load_dotenv
 
-# from openpyxl import load_workbook
-# from openpyxl.comments import Comment
-
 load_dotenv()
 
 
@@ -85,7 +82,7 @@ if __name__ == "__main__":
                         "name": "coi-reader-dev-coireaderdeve59305f7-bdrj9eeywtdz"
                     },
                     "object": {
-                        "key": "outputs/config_json/tae-technologies 2024-08-23 COI/gpt-4o/config.json"
+                        "key": "outputs/config_json/24m 2024-08-30 COI/gpt-4o/config.json"
                     },
                 }
             }

@@ -1,6 +1,8 @@
 raw_extract_template = """
 
-You are a helpful assistant. Please extract the following details listed below from the document along with the specific supporting text. The details are found within the details XML tabs, and the document is found within the document XML tags. 
+You are a helpful assistant. Please extract the following details listed below from the document along with the specific supporting text. The details are found within the details XML tabs, and the document is found within the document XML tags.  
+
+For preferred shares, please use this list ({preferred_shares_list}) to find the number of shares for each series of preferred shares. 
 
 <document>
 {document}
@@ -9,12 +11,10 @@ You are a helpful assistant. Please extract the following details listed below f
 <details>
 1a. company_name: The company's name. For example, ABC Corp.
 1b. company_name_supporting_text: Quote the specific text used to extract the company_name.
-2a. preferred_stock_names: Names of each type of Preferred Stock Shares. For example, ['Series A', 'Series B', 'Series B-1', 'Series 1']
-2b. preferred_stock_names_supporting_text: Quote the specific text used to extract the series_names_details.
-3a. common_shares: Total number of common shares. For example, 5,000. Only provide the numeric value.
-3b. common_shares_supporting_text: Quote the specific text used to extract the common_shares.
-4a. shares_per_preferred_stock: Total number of shares for each type of preferred stock. For example, ('Series A': '1,000', 'Series A-1': '200', 'Series B(a)': '10,000')
-4b. shares_per_preferred_stock_supporting_text: Quote the specific text used to extract the shares_per_preferred_stock.
+2a. common_shares: Total number of common shares. For example, 5,000. Only provide the numeric value.
+2b. common_shares_supporting_text: Quote the specific text used to extract the common_shares.
+3a. shares_per_preferred_stock: Total number of shares for each series of preferred stock. For example, ('Series A': '1,000', 'Series A-1': '200', 'Series B(a)': '10,000')
+3b. shares_per_preferred_stock_supporting_text: Quote the specific text used to extract the shares_per_preferred_stock.
 </details>
 
 Finally, take extracted details and generate the final output in a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":{output_format}
@@ -42,9 +42,8 @@ You are a helpful assistant. I want you to extract and reformat certain items fr
 Below are the items to change with specific instructions.
 1. Do not change the company name
 2. Remove all supporting text fields
-3. "preferred_stock_names": Remove extraneous words like 'Preferred Stock'. The output should only contain "Series" and the name (i.e., Series A, Series B, Series C-1)
-4. "common_shares":  Extract only the number of common shares from the common_share field. If no value retun 'Not found'.
-5. "preferred_shares_per_preferred_stock": Extract value from number_of_shares field. If no value retun 'Not found'.
+3. "common_shares":  Extract only the number of common shares from the common_share field. If no value retun 'Not found'.
+4. "preferred_shares_per_preferred_stock": Extract value from number_of_shares field. If no value retun 'Not found'.
 
 The final answer should contain the updated json object in a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":{output_format}
 

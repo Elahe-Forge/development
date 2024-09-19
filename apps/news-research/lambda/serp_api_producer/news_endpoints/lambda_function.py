@@ -53,30 +53,6 @@ def send_message_to_sqs(payload):
     sqs_client.send_message(QueueUrl=queue_url, MessageBody=json.dumps(payload))
 
 
-def process_s3_event(event):
-    s3_client = boto3.client('s3')
-    for record in event['Records']:
-        if record['eventName'] == 'ObjectCreated:Put':
-            bucket = record['s3']['bucket']['name']
-            key = record['s3']['object']['key']
-            try:
-                response = s3_client.get_object(Bucket=bucket, Key=key)
-                file_content = response['Body'].read().decode('utf-8')
-                json_content = json.loads(file_content)
-                issuer_name = json_content.get('name', 'Name not found')
-                logger.info(f"new issuer created: {issuer_name}") 
-
-                payload = {'issuer_name': issuer_name, 'number_of_articles': default_number_of_articles, 'get_summary': default_get_summary, 'triggered_by': 's3'}
-                send_message_to_sqs(payload)
-                logger.info(f"Enqueued message for {issuer_name} in SQS")             
-            except Exception as e:
-                logger.error(f"Error processing or enqueuing {issuer_name} from {key} in {bucket}: {str(e)}")
-
-    return {
-        'statusCode': 200,
-        'body': json.dumps('Processed S3 event')
-    }
-
 
 def validate_positive_integer(value, default):
     try:
@@ -87,25 +63,6 @@ def validate_positive_integer(value, default):
         pass
     return default
 
-
-def process_api_gateway_event(event):
-    # Determine the number_of_articles and whether to get summary of articles
-    query_params = event.get('queryStringParameters') or {}
-    number_of_articles = validate_positive_integer(query_params.get('number_of_articles'), default_number_of_articles)
-    get_summary = query_params.get('get_summary', default_get_summary).lower() == 'true'
-
-    # Determine the type of command (run-all or run-issuer)
-    path = event.get('resource')
-    if path == '/run-json':
-        return process_run_json(event, number_of_articles, get_summary)  
-    elif path == '/run-s3':
-        return process_run_s3_excel(event, number_of_articles, get_summary)
-    else:
-        logger.info("Invalid command.")
-        return {
-            'statusCode': 400,
-            'body': json.dumps('Invalid command.')
-        }
 
 def process_run_json(event, number_of_articles, get_summary):
     logger.info(f"Processing JSON data with number_of_articles: {number_of_articles}, get_summary: {get_summary}")
@@ -216,10 +173,23 @@ def process_run_s3_excel(event, number_of_articles, get_summary):
 
 
 def handler(event, context):
-    if 'Records' in event:  # Triggered by S3
-        logger.info("Triggered by S3 event")
-        return process_s3_event(event)
-    else:  # Triggered by API Gateway
-        logger.info("Triggered by API Gateway")
-        return process_api_gateway_event(event)
+    logger.info("Triggered by API Gateway")
+    # Determine the number_of_articles and whether to get summary of articles
+    query_params = event.get('queryStringParameters') or {}
+    number_of_articles = validate_positive_integer(query_params.get('number_of_articles'), default_number_of_articles)
+    get_summary = query_params.get('get_summary', default_get_summary).lower() == 'true'
+
+    # Determine the type of command (run-all or run-issuer)
+    path = event.get('resource')
+    if path == '/run-json':
+        return process_run_json(event, number_of_articles, get_summary)  
+    elif path == '/run-s3':
+        return process_run_s3_excel(event, number_of_articles, get_summary)
+    else:
+        logger.info("Invalid command.")
+        return {
+            'statusCode': 400,
+            'body': json.dumps('Invalid command.')
+        }
+        
 

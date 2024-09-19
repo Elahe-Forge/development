@@ -288,24 +288,6 @@ class NewsResearchStack(Stack):
             }
         )
 
-        S3_icms_bucket = "fg-acceptance-issuersapp-extracts" if env_name =='dev' else "fg-prod-issuersapp-extracts"
-        
-        icms_bucket = aws_s3.Bucket.from_bucket_name(
-            self, f"IssuersAppExtracts-{env_name}",
-            bucket_name=S3_icms_bucket
-        )
-
-        # Grant the Lambda function permissions to read from the S3 icms bucket
-        icms_bucket.grant_read(news_endpoints_lambda)
-
-        # Add notification for S3 icms bucket to trigger the Lambda function
-        notification = aws_s3_notifications.LambdaDestination(news_endpoints_lambda)
-        icms_bucket.add_event_notification(
-            aws_s3.EventType.OBJECT_CREATED,
-            notification,
-            aws_s3.NotificationKeyFilter(prefix="projections/issuerProjection/")
-        )
-
 
         # Define the IAM role for news_consumer Lambda
         lambda_role = aws_iam.Role(self, "NewsLambdaExecutionRole",

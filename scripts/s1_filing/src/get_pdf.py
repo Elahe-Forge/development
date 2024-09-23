@@ -3,7 +3,7 @@ import requests
 import os
 import pdfkit
 
-def download_pdfs_from_csv(csv_file_path='../data/s1_lingo.csv', output_directory='../data'):
+def download_pdfs_from_csv(csv_file_path='../data/S-1.csv', output_directory='../data'):
 
     df = pd.read_csv(csv_file_path)
 

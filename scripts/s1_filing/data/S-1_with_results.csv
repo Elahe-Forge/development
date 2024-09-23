@@ -1,0 +1,82 @@
+Issuer,Link,period,company name[cik],date,Cleaned Date,,Match
+Turo,https://www.sec.gov/Archives/edgar/data/1514587/000162828024024022/turoinc-sx1a10.htm,5/17/24,1514587,17-May-24,5/17/24,,YES
+Turo,https://www.sec.gov/Archives/edgar/data/1514587/000162828024036158/turoinc-sx1a11.htm,8/8/24,1514587,8-Aug-24,8/8/24,,YES
+Reddit,https://www.sec.gov/Archives/edgar/data/1713445/000162828024010137/reddit-sx1a1.htm,11-Mar-24,1713445,"March 11, 2024",3/11/24,,YES
+Rubrik,https://www.sec.gov/Archives/edgar/data/1943896/000119312524083525/d359771ds1.htm,4/1/24,1943896,"April 1,
+2024",4/1/24,,YES
+Better,https://www.sec.gov/Archives/edgar/data/1835856/000162828023042192/betr-20231220.htm,12/20/23,1835856,"December
+20, 2023",12/20/23,,YES
+Samsara,https://www.sec.gov/Archives/edgar/data/1642896/000119312521334578/d261594ds1.htm,11/19/21,1642896,"November
+19, 2021",11/19/21,,YES
+Nerdwallet,https://www.sec.gov/Archives/edgar/data/1625278/000162828021019876/nerdwallets-1.htm,10/8/21,1625278,8-Oct-21,10/8/21,,YES
+Udemy,https://www.sec.gov/Archives/edgar/data/1607939/000119312521291460/d163445ds1.htm,10/5/21,1607939,"October
+5, 2021",10/5/21,,YES
+Rent-the-Runway,https://www.sec.gov/Archives/edgar/data/1468327/000119312521304928/d194411ds1a.htm,10/22/21,1468327,"October
+22, 2021",10/22/21,,YES
+Robinhood,https://www.sec.gov/Archives/edgar/data/1783879/000162828021013318/robinhoods-1.htm,7/1/21,1783879,"July 1,
+2021",7/1/21,,YES
+Confluent,https://www.sec.gov/Archives/edgar/data/1699838/000119312521178773/d63025ds1.htm,6/1/21,1699838,"June 1,
+2021",6/1/21,,YES
+Marqeta,https://www.sec.gov/Archives/edgar/data/1522540/000119312521162113/d64065ds1.htm,5/14/21,1522540,"May 14,
+2021",5/14/21,,YES
+The Honest Company,https://www.sec.gov/Archives/edgar/data/1530979/000119312521111539/d27841ds1.htm,4/9/21,1530979,"April 9,
+2021",4/9/21,,YES
+Zymergen,https://www.sec.gov/Archives/edgar/data/1645842/000114036121009581/nt10018776x4_s1.htm,3/23/21,1645842,"March
+23, 2021",3/23/21,,YES
+UiPath,https://www.sec.gov/Archives/edgar/data/1734722/000119312521094920/d98556ds1.htm,3/25/21,1734722,"March
+25, 2021",3/25/21,,YES
+Coinbase,https://www.sec.gov/Archives/edgar/data/1679788/000162828021003168/coinbaseglobalincs-1.htm,2/25/21,1679788,"February
+25, 2021",2/25/21,,YES
+ContextLogic Inc. (Wish),https://www.sec.gov/Archives/edgar/data/1822250/000119312520298630/d82777ds1.htm,11/20/20,1822250,"November
+20, 2020",11/20/20,,YES
+Airbnb,https://www.sec.gov/Archives/edgar/data/1559720/000119312520294801/d81668ds1.htm,11/16/20,1559720,"November 16, 2020",11/16/20,,YES
+Doordash,https://www.sec.gov/Archives/edgar/data/1792789/000119312520292381/d752207ds1.htm,11/13/20,1792789,"November 13, 2020",11/13/20,,YES
+Palantir,https://www.sec.gov/Archives/edgar/data/1321655/000119312520230013/d904406ds1.htm,8/25/20,1321655,"August
+25, 2020",8/25/20,,YES
+Sumo Logic,https://www.sec.gov/Archives/edgar/data/1643269/000119312520227201/d821436ds1.htm,8/21/20,1643269,"August
+21, 2020",8/21/20,,YES
+Snowflake,https://www.sec.gov/Archives/edgar/data/1640147/000162828020013010/snowflakes-1.htm,8/24/20,1640147,"August
+24, 2020",8/24/20,,YES
+Lemonade,https://www.sec.gov/Archives/edgar/data/1691421/000104746920003416/a2241721zs-1.htm,6/8/20,1691421,"June 8,
+2020",6/8/20,,YES
+Slack,https://www.sec.gov/Archives/edgar/data/1764925/000162828019004786/slacks-1.htm,4/26/19,1764925,"April
+26, 2019",4/26/19,,YES
+onestream,https://www.sec.gov/Archives/edgar/data/1889956/000095017024083395/onestream_s-1a.htm,7/15/24,1889956,"July 15,
+2024",7/15/24,,YES
+alumis,https://www.sec.gov/Archives/edgar/data/1847367/000110465924074108/tm2411163-12_s1a.htm,6/24/24,1847367,,,,NO
+tempus,https://www.sec.gov/Archives/edgar/data/1717115/000119312524160268/d221145ds1a.htm,6/13/24,1717115,"June 13,
+2024",6/13/24,,YES
+boundless-bio,https://www.sec.gov/Archives/edgar/data/1782303/000119312524073230/d493037ds1a.htm,3/21/24,1782303,"March
+21, 2024",3/21/24,,YES
+fractyl,https://www.sec.gov/Archives/edgar/data/1572616/000119312524017309/d519724ds1a.htm,1/29/24,1572616,"January
+29, 2024",1/29/24,,YES
+klaviyo,https://www.sec.gov/Archives/edgar/data/1835830/000162828023032413/klaviyoincs-1a2.htm,9/18/23,1835830,18-Sep-23,9/18/23,,YES
+cava,https://www.sec.gov/Archives/edgar/data/1639438/000162828023021793/cava-sx1a2.htm,6/12/23,1639438,12-Jun-23,6/12/23,,YES
+monday-com,https://www.sec.gov/Archives/edgar/data/1845338/000110465921067423/tm211978-4_f1.htm,5/17/21,1845338,,,,NO
+1stdibs,https://www.sec.gov/Archives/edgar/data/1600641/000119312521185143/d244039ds1a.htm,6/8/21,1600641,"June 8,
+2021",6/8/21,,YES
+roblox,https://www.sec.gov/Archives/edgar/data/1315098/000119312521049767/d87104ds1a.htm,2/22/21,1315098,"February 22, 2021",2/22/21,,YES
+bumble,https://www.sec.gov/Archives/edgar/data/1830043/000119312521266589/d13690ds1.htm,9/7/21,1830043,7-Sep-21,9/7/21,,YES
+eargo,https://www.sec.gov/Archives/edgar/data/1719395/000119312520254743/d808052ds1.htm,9/25/20,1719395,25-Sep-20,9/25/20,,YES
+pulmonx,https://www.sec.gov/Archives/edgar/data/1127537/000162828020013998/pulmonxs-1a3.htm,9/30/20,1127537,30-Sep-20,9/30/20,,YES
+jfrog,https://www.sec.gov/Archives/edgar/data/1800667/000119312520244608/d841831ds1a.htm,9/14/20,1800667,14-Sep-20,9/14/20,,YES
+nurix,https://www.sec.gov/Archives/edgar/data/1549595/000119312521065468/d97958ds1.htm,3/2/21,1549595,"March 2,
+2021",3/2/21,,YES
+fastly,https://www.sec.gov/Archives/edgar/data/1517413/000119312519111675/d702138ds1.htm,4/19/19,1517413,"April
+19, 2019",4/19/19,,YES
+solarwinds,https://www.sec.gov/Archives/edgar/data/1428669/000119312508062588/ds1.htm,3/21/08,1739942,"March
+21, 2008",3/21/08,,YES
+roku,https://www.sec.gov/Archives/edgar/data/1428439/000119312517275689/d403225ds1.htm,9/1/17,1428439,"September 1, 2017",9/1/17,,YES
+twilio,https://www.sec.gov/Archives/edgar/data/1447669/000119312516733893/d237988ds1.htm,10/7/16,1447669,"October
+7, 2016",10/7/16,,YES
+atlassian,https://www.sec.gov/Archives/edgar/data/1650372/000155837015001685/filename1.htm,8/21/15,1650372,21-Aug-15,8/21/15,,YES
+shopify,https://www.sec.gov/Archives/edgar/data/1594805/000119312515192428/d925168df1a.htm,5/19/15,1594805,"May 19,
+2015",5/19/15,,YES
+hubspot,https://www.sec.gov/Archives/edgar/data/1404655/000119312514353746/d697256ds1a.htm,9/26/14,1404655,26-Sep-14,9/26/14,,YES
+twitter,https://www.sec.gov/Archives/edgar/data/1418091/000119312513424260/d564001ds1a.htm,11/4/13,1418091,"November
+4, 2013",11/4/13,,YES
+envestnet,https://www.sec.gov/Archives/edgar/data/1337619/000119312510067517/ds1.htm,3/26/10,1337619,"March
+26, 2010",3/26/10,,YES
+quinstreet,https://www.sec.gov/Archives/edgar/data/1117297/000095012310007794/f53797a4sv1za.htm,2/2/10,1117297,"February 2, 2010",2/2/10,,YES
+paymentus,https://www.sec.gov/Archives/edgar/data/1841156/000156459021022583/ck7045120534-s1.htm,4/30/21,1841156,"April
+30, 2021",4/30/21,,YES

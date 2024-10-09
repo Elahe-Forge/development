@@ -1,7 +1,2 @@
-boto3
-botocore
 requests
 feedparser
-pdfkit
-wkhtmltopdf
-weasyprint

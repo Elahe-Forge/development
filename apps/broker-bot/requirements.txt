@@ -1,0 +1,15 @@
+llama-index-core
+llama-index-llms-openai
+python-docx
+python-dotenv
+llama-index-readers-file
+docx2txt
+llama-index-embeddings-openai
+llama-index
+wandb
+streamlit
+spacy
+nest-asyncio
+llama-index-llms-bedrock-converse
+scikit-learn
+weave

@@ -12,4 +12,4 @@ spacy
 nest-asyncio
 llama-index-llms-bedrock-converse
 scikit-learn
-weave
+weave==0.51.1

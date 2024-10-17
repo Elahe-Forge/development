@@ -1,0 +1,16 @@
+Sectors:
+    AI:
+    - OpenAI
+    - Anthropic
+    - ElevenLabs
+    - ScaleAI
+    - Mistral
+    Energy:
+    - Redwood Material
+    - Twelve
+    - Form Energy
+    - EnergyX
+    Space & Defence:
+    - SpaceX
+    - Axiom Space
+    - Anduril

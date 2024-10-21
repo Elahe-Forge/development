@@ -15,6 +15,8 @@ import requests
 import uuid
 from llm_handler import GPTProcessor, ClaudeProcessor
 import json
+import pandas as pd
+import io
 
 # Initialize logger
 logger = logging.getLogger()
@@ -49,8 +51,12 @@ def process_records(records, llm_processor, model_name, model_version, s3_news_o
 
         except Exception as e:
             logger.error(f'Error processing news record: {news_record}, error: {e}')
+
+        if news_record['triggered_by'] == 's3_excel':
+            persist_news_analysis_parquet(news_record, s3_news_output_bucket, f"{model_name}-{model_version}")
+    if records[0]['triggered_by'] == 'api_json':
+        persist_news_analysis(records, s3_news_output_bucket, f"{model_name}-{model_version}")
     
-    persist_news_analysis(records, s3_news_output_bucket, f"{model_name}-{model_version}")
 
 # Get the news from the url and strip out all html returning raw text
 def get_raw_news_text(url : str) -> str: # throws http error if problems w/request
@@ -107,6 +113,42 @@ def persist_news_analysis(news_records, s3_news_output_bucket, model_handle):
         except Exception as e:
             logger.error(f"Unexpected error occurred while persisting records for issuer '{issuer_name}': {e}")
 
+
+
+
+def persist_news_analysis_parquet(news_record, s3_news_output_bucket, model_handle):
+    """ 
+    Persist a news record to S3 as a single Parquet file. 
+    """
+    if news_record:  
+        try:
+            logger.info(f"Persisting news records: {news_record}")
+
+            issuer_name = news_record['issuer_name']
+            slug = news_record['slug']
+            company_id = news_record['company_id']
+            timestamp = datetime.datetime.now()
+            unique_id = uuid.uuid4()  # Generate a unique identifier to ensure uniqueness
+
+            if isinstance(news_record.get('tags'), list):
+                news_record['tags'] = ', '.join(news_record['tags'])  # Join list elements as a string
+
+            df = pd.DataFrame([news_record])
+            
+            parquet_buffer = io.BytesIO()
+            df.to_parquet(parquet_buffer, index=False)
+            parquet_buffer.seek(0) 
+
+            s3_prefix = "test-" + timestamp.strftime("%Y%m%d") + "-" + model_handle 
+            s3_object_key = f'news-articles/{s3_prefix}/{slug}_{company_id}/news_records_{unique_id}.parquet'
+            
+            s3_client.put_object(Bucket=s3_news_output_bucket, Key=s3_object_key, Body=parquet_buffer.getvalue())
+            
+            logger.info(f"Persisted records for issuer '{issuer_name}' to S3 bucket '{s3_news_output_bucket}' with key '{s3_object_key}'")
+        except ClientError as e:
+            logger.error(f"Failed to persist records for issuer '{issuer_name}' to S3 bucket '{s3_news_output_bucket}': {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error occurred while persisting records for issuer '{issuer_name}': {e}")
 
 
 def initialize_llm_processor(model_name, model_handle, s3_news_prompts_bucket, prompt_version):

@@ -104,7 +104,7 @@ def process_run_json(event, number_of_articles, get_summary):
             'company_id': company_id,
             'number_of_articles': number_of_articles,
             'get_summary': get_summary,
-            'triggered_by': 'api'
+            'triggered_by': 'api_json'
         }
         send_message_to_sqs(payload)
 
@@ -141,15 +141,17 @@ def process_run_s3_excel(event, number_of_articles, get_summary):
                     if 'issuerKey' in df.columns:
                         for _, row in df.dropna(subset=['issuerKey']).iterrows():
                             issuer_name = row['issuerKey']
-                            slug = row['slug']
-                            company_id = row['company_id']
+                            # slug = row['slug']
+                            # company_id = row['company_id']
+                            slug = row['issuerKey']
+                            company_id = row['issuerKey']
                             payload = {
                                 'issuer_name': issuer_name,
                                 'slug': slug,
                                 'company_id': company_id,
                                 'number_of_articles': number_of_articles,
                                 'get_summary': get_summary,
-                                'triggered_by': 'api'
+                                'triggered_by': 's3_excel'
                             }
                             send_message_to_sqs(payload)
                             issuer_count += 1

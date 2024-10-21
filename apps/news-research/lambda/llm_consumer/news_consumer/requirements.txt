@@ -3,3 +3,5 @@ boto3
 botocore
 logging
 requests
+pandas
+pyarrow

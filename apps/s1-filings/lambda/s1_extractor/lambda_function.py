@@ -2,7 +2,7 @@
 """
 Processes messages from the SQS queue. 
 Access the html files in S3.
-Extracts S1 lockup info and stores in S3 and RDS-Postgres.
+Extracts S1 lockup info and stores in S3 and FDP Aurora instance.
 """
 
 import os

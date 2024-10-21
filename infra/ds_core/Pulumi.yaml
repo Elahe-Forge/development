@@ -1,0 +1,9 @@
+name: ds_core
+stackConfigDir: ./config
+runtime:
+  name: python
+  options:
+    toolchain: pip
+description: Core resources for the DS team
+backend:
+  url: s3://fd-pulumi-backend-bucket

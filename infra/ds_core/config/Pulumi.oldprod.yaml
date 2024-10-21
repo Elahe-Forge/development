@@ -1,0 +1,5 @@
+encryptionsalt: v1:N95+fbwroLk=:v1:4h7bSYKuRL7zfwkr:8OzGFy1nmxuZslcujI68CvWV02HpkA==
+config:
+  aws:region: us-west-2
+  ds_core:environment: prod
+

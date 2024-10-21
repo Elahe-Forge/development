@@ -1,0 +1,4 @@
+encryptionsalt: v1:BeTASQzquOA=:v1:LQrhwEGCMDYefnj7:T00OGfz+Zc/gBtewCf7JXm1Rt9IfDg==
+config:
+  aws:region: us-west-2
+  ds_core:environment: nonprod

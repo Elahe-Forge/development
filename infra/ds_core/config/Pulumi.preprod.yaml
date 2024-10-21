@@ -1,0 +1,5 @@
+encryptionsalt: v1:jX0c6KfY0rY=:v1:0lHzMf59ear8QmAh:Bb0njn2AhJcuif5r1xIX3bk/qM3lRA==
+config:
+  aws:region: us-west-2
+  ds_core:environment: preprod
+

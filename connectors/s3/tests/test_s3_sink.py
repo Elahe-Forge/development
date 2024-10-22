@@ -8,13 +8,6 @@ from moto import mock_aws
 
 from connectors.s3.s3_sink import S3Sink
 
-
-# import os
-#
-# os.environ['AWS_ACCESS_KEY_ID'] = 'testing'
-# os.environ['AWS_SECRET_ACCESS_KEY'] = 'testing'
-#
-
 class TestS3Sink(unittest.TestCase):
 
     # @mock_aws

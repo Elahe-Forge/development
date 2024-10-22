@@ -21,38 +21,38 @@ class TestS3Source(unittest.TestCase):
         self.s3_source_df = S3Source[pd.DataFrame](self.bucket_name, s3_client=self.mock_s3_client)
         self.s3_source_list = S3Source[List](self.bucket_name, s3_client=self.mock_s3_client)
 
-    def test_extract_csv(self):
-        """Test extracting a CSV file from S3 and returning as a DataFrame."""
+    def test_fetch_csv(self):
+        """Test fetching a CSV file from S3 and returning as a DataFrame."""
         csv_data = "col1,col2\n1,2\n3,4"
         self.mock_s3_client.get_object.return_value = {'Body': BytesIO(csv_data.encode())}
 
-        df = self.s3_source_df.extract('data/file.csv')
+        df = self.s3_source_df.fetch('data/file.csv')
         expected_df = pd.DataFrame({'col1': [1, 3], 'col2': [2, 4]})
 
         pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_extract_ndjson(self):
-        """Test extracting NDJSON file and returning as a list of dicts."""
+    def test_fetch_ndjson(self):
+        """Test fetching NDJSON file and returning as a list of dicts."""
         ndjson_data = '{"col1": 1, "col2": 2}\n{"col1": 3, "col2": 4}'
         self.mock_s3_client.get_object.return_value = {'Body': BytesIO(ndjson_data.encode())}
 
-        df = self.s3_source_df.extract('data/file.ndjson')
+        df = self.s3_source_df.fetch('data/file.ndjson')
         expected_df = pd.DataFrame([{'col1': 1, 'col2': 2}, {'col1': 3, 'col2': 4}])
 
         pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_extract_json(self):
-        """Test extracting a JSON file and returning as a list of dicts."""
+    def test_fetch_json(self):
+        """Test fetching a JSON file and returning as a list of dicts."""
         json_data = json.dumps([{"col1": 1, "col2": 2}, {"col1": 3, "col2": 4}])
         self.mock_s3_client.get_object.return_value = {'Body': BytesIO(json_data.encode())}
 
-        data = self.s3_source_list.extract('data/file.json')
+        data = self.s3_source_list.fetch('data/file.json')
         expected_data = [{"col1": 1, "col2": 2}, {"col1": 3, "col2": 4}]
 
         self.assertEqual(data, expected_data)
 
-    def test_extract_parquet(self):
-        """Test extracting a Parquet file and returning as a DataFrame."""
+    def test_fetch_parquet(self):
+        """Test fetching a Parquet file and returning as a DataFrame."""
         # Create a sample Parquet file in memory
         df_to_parquet = pd.DataFrame({'col1': [1, 3], 'col2': [2, 4]})
         buffer = BytesIO()
@@ -61,7 +61,7 @@ class TestS3Source(unittest.TestCase):
 
         self.mock_s3_client.get_object.return_value = {'Body': buffer}
 
-        df = self.s3_source_df.extract('data/file.parquet')
+        df = self.s3_source_df.fetch('data/file.parquet')
         pd.testing.assert_frame_equal(df, df_to_parquet)
 
     def test_list_keys(self):

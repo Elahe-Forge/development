@@ -22,7 +22,7 @@ class S3Source(Source[T], Generic[T]):
         response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
         return response['Body'].read()
 
-    def extract(self, key: str) -> T:
+    def fetch(self, key: str) -> T:
         """Extract data from S3 and return it as the specified type T."""
         raw_data = self._get_s3_object(key)
 

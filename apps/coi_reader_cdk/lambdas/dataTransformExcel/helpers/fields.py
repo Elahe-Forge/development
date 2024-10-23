@@ -103,21 +103,24 @@ other_fields = {
     "company_name": {
         "output_file": "company_shares",
         "key_name": "company_name",
-        "supporting_text_field": "company_name_supporting_text",
+        "supporting_text_field": ["company_name_supporting_text"],
     },
     "common_shares": {
         "output_file": "company_shares",
         "key_name": "common_shares",
-        "supporting_text_field": "common_shares_supporting_text",
+        "supporting_text_field": ["common_shares_supporting_text"],
     },
     "incorporation_date": {
         "output_file": "dates",
         "key_name": "incorporation_date",
-        "supporting_text_field": "incorporation_date_supporting_text",
+        "supporting_text_field": [
+            "incorporation_date_supporting_text",
+            "incorporation_supporting_text",
+        ],
     },
     "delivery_date": {
         "output_file": "dates",
         "key_name": "document_delivery_date",
-        "supporting_text_field": "document_delivery_date_supporting_text",
+        "supporting_text_field": ["document_delivery_date_supporting_text"],
     },
 }

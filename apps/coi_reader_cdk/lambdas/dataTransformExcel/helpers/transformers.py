@@ -7,8 +7,6 @@ import boto3
 import helpers.utils as utils
 import pandas as pd
 from helpers.fields import other_fields, precise_fields, raw_fields
-
-# from helpers.readers import DocumentReader
 from openpyxl import load_workbook
 from openpyxl.comments import Comment
 
@@ -33,8 +31,8 @@ def generate_precise_df(bucket, json_data):
             bucket, file_path
         )  # Load file content from S3
 
-        json_obj = utils.convert_file_to_json_obj(
-            model_id, file_content
+        json_obj = utils.extract_json_obj(
+            file_content
         )  # Convert file content to JSON object
 
         # Handle "shares_type" field differently
@@ -175,7 +173,6 @@ def convert_pandas_to_excel(bucket, df, dfs, output_dict, json_data):
     author = "coi-reader"  # Author name for comments
 
     # Loop through each row and column in the `dfs` DataFrame to add comments
-
     for row_idx in range(dfs.shape[0]):  # Loop over rows
         adj_col_idx = 1  # Adjustment to match comments to correct cell
         for col_idx in range(dfs.shape[1]):  # Loop over columns
@@ -222,7 +219,6 @@ def convert_pandas_to_excel(bucket, df, dfs, output_dict, json_data):
         ws[f"B{count}"] = v["data_extract"]  # Add extracted data to column B
         comment_text = v["supporting_text"]  # Get the supporting text comment
         len_comment_text = len(comment_text)  # Calculate comment length
-
         # Attach comments to the cells in column B
         ws[f"B{count}"].comment = Comment(
             comment_text,
@@ -231,7 +227,6 @@ def convert_pandas_to_excel(bucket, df, dfs, output_dict, json_data):
             height=max(200, len_comment_text),
         )
         count += 1  # Move to the next row
-
     # Set the width of column A for better visibility
     ws.column_dimensions["A"].width = 20
 
@@ -291,7 +286,7 @@ def generate_support_df(bucket, json_data, preferred_shares_list):
                     output_dict[pref_share_name].append(file_content)
         else:
             # Convert the file content to a JSON object for further processing
-            json_obj = utils.convert_file_to_json_obj(model_id, file_content)
+            json_obj = utils.extract_json_obj(file_content)
 
             # Iterate over the preferred shares list
             for pref_share_name in preferred_shares_list:
@@ -375,16 +370,19 @@ def extract_other_fields_dict(bucket, json_data):
         )  # Initialize a dictionary to store intermediate results for this field
         for extract_type in extract_type_list:
             if extract_type == "raw":
-                # Extract supporting text based on a field in the file content
-                supporting_text_extract = extract_field_value(
-                    file_content, dict["supporting_text_field"]
-                )
+                # Extract supporting text based on a field in the file content - loop through different field name options
+                for field in list(dict["supporting_text_field"]):
+                    supporting_text_extract = extract_field_value(file_content, field)
+                    if supporting_text_extract == None:
+                        continue
+                    else:
+                        break
                 interim_dict["supporting_text"] = (
                     supporting_text_extract  # Store the raw extraction
                 )
             else:
                 # Convert the file content to a JSON object
-                json_obj = utils.convert_file_to_json_obj(model_id, file_content)
+                json_obj = utils.extract_json_obj(file_content)
                 interim_dict["data_extract"] = json_obj[
                     dict["key_name"]
                 ]  # Extract specific data from the JSON

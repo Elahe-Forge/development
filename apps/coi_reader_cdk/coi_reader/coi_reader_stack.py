@@ -4,6 +4,7 @@ from aws_cdk import aws_lambda as _lambda
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_s3_notifications as s3n
 from aws_cdk import aws_ses as ses
+from aws_cdk.aws_ecr_assets import DockerImageAsset
 from aws_cdk.aws_lambda_python_alpha import PythonFunction
 from constructs import Construct
 
@@ -153,20 +154,35 @@ class CoiReaderStack(Stack):
             s3.NotificationKeyFilter(prefix="outputs/document_txts/", suffix=".txt"),
         )
 
-        ## DATA TRANSFORM EXCEL LAMBDA FUNCTION
-        # Create the Lambda function
-        data_transform_excel_lambda_fxn = PythonFunction(
+        # Define the Docker image
+        data_transform_excel_lambda_fxn = _lambda.DockerImageFunction(
             self,
-            "DataTransformExcelFunction",
-            entry="lambdas/dataTransformExcel",
-            runtime=_lambda.Runtime.PYTHON_3_10,
-            index="handler.py",
-            handler="handler",
-            architecture=_lambda.Architecture.ARM_64,
+            "TransformToExcelFunction",
+            code=_lambda.DockerImageCode.from_image_asset("lambdas/dataTransformExcel"),
             memory_size=1024,
             timeout=Duration.seconds(600),
             environment={"BUCKET_NAME": bucket.bucket_name},
+            architecture=_lambda.Architecture.ARM_64,
         )
+
+        # # Create the Lambda function
+        # data_transform_excel_lambda_fxn = PythonFunction(
+        #     self,
+        #     "TransformToExcelFunction",
+        #     entry="lambdas/dataTransformExcel",
+        #     runtime=_lambda.Runtime.PYTHON_3_10,
+        #     index="handler.py",
+        #     handler="handler",
+        #     architecture=_lambda.Architecture.ARM_64,
+        #     memory_size=1024,
+        #     timeout=Duration.seconds(600),
+        #     environment={"BUCKET_NAME": bucket.bucket_name},
+        #     # layers=[
+        #     #     _lambda.LayerVersion.from_layer_version_arn(
+        #     #         self, "PandasLayer", pandas_layer_arn
+        #     #     )
+        #     # ],
+        # )
 
         data_transform_excel_lambda_fxn.add_to_role_policy(
             iam.PolicyStatement(

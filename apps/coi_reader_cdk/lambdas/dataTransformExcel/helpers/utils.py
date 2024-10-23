@@ -3,11 +3,8 @@ import os
 import re
 
 import boto3
-from helpers.readers import DocumentReader
 
-# import json
-
-# import helpers.utils as utils
+# from helpers.readers import DocumentReader
 
 s3 = boto3.client("s3")
 
@@ -73,53 +70,53 @@ def extract_json_obj(input_str):
     return json_obj
 
 
-def load_and_correct_json(json_string, model_id):
-    try:
-        # Try to load the JSON string first
-        return extract_json_obj(json_string)
-    except json.JSONDecodeError:
+# def load_and_correct_json(json_string, model_id):
+#     try:
+#         # Try to load the JSON string first
+#         return extract_json_obj(json_string)
+#     except json.JSONDecodeError:
 
-        try:
+#         try:
 
-            doc_reader = DocumentReader(model_id=model_id)
+#             doc_reader = DocumentReader(model_id=model_id)
 
-            template = """
-            You are a helpful assistant. Please take the following input text (see document XML tags) and reformat it into a valid JSON object. Currently is not a valid JSON object and contains errors.
+#             template = """
+#             You are a helpful assistant. Please take the following input text (see document XML tags) and reformat it into a valid JSON object. Currently is not a valid JSON object and contains errors.
 
-            Make sure to:
+#             Make sure to:
 
-            1. remove double quotes within double quotes
-            2. remove escape characters
-            3. Check that it does not contain extract brackets at the end
-            4. Check that it does not contain missing brackets at the end
+#             1. remove double quotes within double quotes
+#             2. remove escape characters
+#             3. Check that it does not contain extract brackets at the end
+#             4. Check that it does not contain missing brackets at the end
 
-            The final answer should contain the updated json object in a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":{output_format}
+#             The final answer should contain the updated json object in a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":{output_format}
 
-            <document>
-            {document}
-            </document>
+#             <document>
+#             {document}
+#             </document>
 
-            <final_answer>
-            """
+#             <final_answer>
+#             """
 
-            output_format = """
-            {
-            "key": "value"
-            }
-            """
+#             output_format = """
+#             {
+#             "key": "value"
+#             }
+#             """
 
-            raw_response = doc_reader.run_llm_extract(
-                json_string,
-                template,
-                output_format,
-            )
-            # print(raw_response.content)
+#             raw_response = doc_reader.run_llm_extract(
+#                 json_string,
+#                 template,
+#                 output_format,
+#             )
+#             # print(raw_response.content)
 
-            return extract_json_obj(raw_response.content)
+#             return extract_json_obj(raw_response.content)
 
-        except json.JSONDecodeError as e:
-            # If it still fails, raise an exception
-            raise ValueError(f"Failed to parse JSON: {str(e)}")
+#         except json.JSONDecodeError as e:
+#             # If it still fails, raise an exception
+#             raise ValueError(f"Failed to parse JSON: {str(e)}")
 
 
 def load_file(filepath, model_id, filename, field, extract, as_json=True):
@@ -157,53 +154,13 @@ def load_s3_file(bucket, key):
     return file_content
 
 
-def convert_file_to_json_obj(model_id, file_content):
-    try:
-        # Try to load the JSON string first
-        return extract_json_obj(file_content)
-    except json.JSONDecodeError:
-
-        try:
-
-            doc_reader = DocumentReader(model_id=model_id)
-
-            template = """
-            You are a helpful assistant. Please take the following input text (see document XML tags) and reformat it into a valid JSON object. Currently is not a valid JSON object and contains errors.
-
-            Make sure to:
-
-            1. remove double quotes within double quotes
-            2. remove escape characters
-            3. Check that it does not contain extract brackets at the end
-            4. Check that it does not contain missing brackets at the end
-
-            The final answer should contain the updated json object in a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":{output_format}
-
-            <document>
-            {document}
-            </document>
-
-            <final_answer>
-            """
-
-            output_format = """
-            {
-            "key": "value"
-            }
-            """
-
-            raw_response = doc_reader.run_llm_extract(
-                json_string,
-                template,
-                output_format,
-            )
-            # print(raw_response.content)
-
-            return extract_json_obj(raw_response.content)
-
-        except json.JSONDecodeError as e:
-            # If it still fails, raise an exception
-            raise ValueError(f"Failed to parse JSON: {str(e)}")
+# def convert_file_to_json_obj(model_id, file_content):
+#     try:
+#         # Try to load the JSON string first
+#         return extract_json_obj(file_content)
+#     except json.JSONDecodeError as e:
+#         # If it still fails, raise an exception
+#         raise ValueError(f"Failed to parse JSON: {str(e)}")
 
 
 def extract_supporting_text(d, result=None):

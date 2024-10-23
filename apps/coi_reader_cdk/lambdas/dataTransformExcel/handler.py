@@ -27,6 +27,7 @@ def handler(event, context):
         precise_df, preferred_shares_list = transformers.generate_precise_df(
             bucket, json_data
         )
+        print(preferred_shares_list)
         print("Precise DataFrame generated")
 
         raw_df = transformers.generate_support_df(
@@ -82,7 +83,7 @@ if __name__ == "__main__":
                         "name": "coi-reader-dev-coireaderdeve59305f7-bdrj9eeywtdz"
                     },
                     "object": {
-                        "key": "outputs/config_json/24m 2024-08-30 COI/gpt-4o/config.json"
+                        "key": "outputs/config_json/liqid 2024-10-11 COI/gpt-4o/config.json"
                     },
                 }
             }

@@ -1,8 +1,8 @@
 *.swp
 package-lock.json
-__pycache__
+__pycache__/
 .pytest_cache
-.venv
+.venv/
 *.egg-info
 
 # CDK asset staging directory
@@ -13,3 +13,11 @@ cdk.out
 cdk.context.json
 .DS_Store
 /tests
+
+# Ignore build artifacts
+dist/
+build/
+
+# Ignore logs and temp files
+*.log
+*.tmp

@@ -1,10 +1,11 @@
 import json
 import os
 import re
-
 import types
 
 import boto3
+from dotenv import load_dotenv
+
 import helpers.utils as utils
 import templates.company_shares_templates as company_shares_templates
 import templates.conversion_price_templates as conversion_price_templates
@@ -16,7 +17,6 @@ import templates.liq_pref_templates as liq_pref_templates
 import templates.participation_cap_templates as participation_cap_templates
 import templates.participation_rights_templates as participation_rights_templates
 import templates.preferred_shares_templates as preferred_share_names_templates
-from dotenv import load_dotenv
 from helpers.readers import DocumentReader
 
 load_dotenv()
@@ -201,9 +201,7 @@ if __name__ == "__main__":
                     "bucket": {
                         "name": "coi-reader-dev-coireaderdeve59305f7-bdrj9eeywtdz"
                     },
-                    "object": {
-                        "key": "outputs/document_txts/invisible-technologies 2024-05-14 COI.txt"
-                    },
+                    "object": {"key": "outputs/document_txts/6k 2024-07-19 COI.txt"},
                 }
             }
         ]

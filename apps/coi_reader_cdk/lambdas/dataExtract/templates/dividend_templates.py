@@ -25,7 +25,7 @@ Make sure to:
 5. Include all series of preferred stock
 6. Do not make up or imply any information.
 
-Provide the output in a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":{output_format}. Do not make up or imply any information. Source supporting text directly from the document.
+Provide the output in a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":{output_format}. Follow the naming convention exactly in the markdown code snippet. Only change the preferred stock name and the values for the dividend_pct, dividend_per_share, and dividend_cumulative.
 
 If no dividend information found for all series of preferred stock return "preferred_stock1":("dividend_pct":0, "dividend_per_share":0, "dividend_cumulative": "No"), "preferred_stock2":("dividend_pct":0, "dividend_per_share":0, "dividend_cumulative": "No"), etc.
 

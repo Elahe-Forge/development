@@ -2,9 +2,10 @@ import json
 import os
 
 import boto3
+from dotenv import load_dotenv
+
 import helpers.transformers as transformers
 import helpers.utils as utils
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -23,7 +24,7 @@ def handler(event, context):
 
     try:
         json_data = utils.load_s3_json_obj(bucket, key)  # load config file from event
-
+        # print(json_data)
         precise_df, preferred_shares_list = transformers.generate_precise_df(
             bucket, json_data
         )
@@ -83,7 +84,7 @@ if __name__ == "__main__":
                         "name": "coi-reader-dev-coireaderdeve59305f7-bdrj9eeywtdz"
                     },
                     "object": {
-                        "key": "outputs/config_json/liqid 2024-10-11 COI/gpt-4o/config.json"
+                        "key": "outputs/config_json/6k 2024-07-19 COI/gpt-4o/config.json"
                     },
                 }
             }

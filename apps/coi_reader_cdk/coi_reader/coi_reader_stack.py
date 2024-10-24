@@ -165,25 +165,6 @@ class CoiReaderStack(Stack):
             architecture=_lambda.Architecture.ARM_64,
         )
 
-        # # Create the Lambda function
-        # data_transform_excel_lambda_fxn = PythonFunction(
-        #     self,
-        #     "TransformToExcelFunction",
-        #     entry="lambdas/dataTransformExcel",
-        #     runtime=_lambda.Runtime.PYTHON_3_10,
-        #     index="handler.py",
-        #     handler="handler",
-        #     architecture=_lambda.Architecture.ARM_64,
-        #     memory_size=1024,
-        #     timeout=Duration.seconds(600),
-        #     environment={"BUCKET_NAME": bucket.bucket_name},
-        #     # layers=[
-        #     #     _lambda.LayerVersion.from_layer_version_arn(
-        #     #         self, "PandasLayer", pandas_layer_arn
-        #     #     )
-        #     # ],
-        # )
-
         data_transform_excel_lambda_fxn.add_to_role_policy(
             iam.PolicyStatement(
                 actions=[

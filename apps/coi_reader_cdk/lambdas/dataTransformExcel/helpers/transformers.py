@@ -4,11 +4,12 @@ import re
 from io import BytesIO
 
 import boto3
-import helpers.utils as utils
 import pandas as pd
-from helpers.fields import other_fields, precise_fields, raw_fields
 from openpyxl import load_workbook
 from openpyxl.comments import Comment
+
+import helpers.utils as utils
+from helpers.fields import other_fields, precise_fields, raw_fields
 
 
 def generate_precise_df(bucket, json_data):

@@ -6,12 +6,6 @@ from botocore.exceptions import ClientError
 from langchain_openai import ChatOpenAI
 from langchain.chains import LLMChain
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-
-# Initialize logger
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
-
 import boto3
 import json
 import logging
@@ -102,8 +96,12 @@ class ClaudeProcessor:
                 # Attempt to extract a number in the completion
                 match = re.search(r'\d+', completion)
                 if match:
-                    return match.group()
-                return completion  # Handle non-numerical completion gracefully 
+                    match_value = int(match.group())
+                    if 1 <= match_value <= 5:
+                        return match_value
+                    else:
+                        return 1
+                return 1
             elif metric_name == "summary":
                 return self.clean_phrase(completion)
             elif metric_name == "tags":

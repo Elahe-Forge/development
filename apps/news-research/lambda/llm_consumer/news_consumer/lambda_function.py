@@ -139,7 +139,7 @@ def persist_news_analysis_parquet(news_record, s3_news_output_bucket, model_hand
             df.to_parquet(parquet_buffer, index=False)
             parquet_buffer.seek(0) 
 
-            s3_prefix = "test-" + timestamp.strftime("%Y%m%d") + "-" + model_handle 
+            s3_prefix = timestamp.strftime("%Y%m%d") + "-" + model_handle 
             s3_object_key = f'news-articles/{s3_prefix}/{slug}_{company_id}/news_records_{unique_id}.parquet'
             
             s3_client.put_object(Bucket=s3_news_output_bucket, Key=s3_object_key, Body=parquet_buffer.getvalue())

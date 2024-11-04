@@ -342,9 +342,9 @@ class NewsResearchStack(Stack):
         )
 
         # Attach the llm consumer queue as an event source to the news_consumer Lambda
-        news_consumer_event_source = lambda_event_source.SqsEventSource(llm_consumer_queue)
+        news_consumer_event_source = lambda_event_source.SqsEventSource(llm_consumer_queue, batch_size=1)
         news_consumer_lambda.add_event_source(news_consumer_event_source)
-
+        
         news_consumer_lambda.add_to_role_policy(s3_policy)
 
         openai_api_key = f"arn:aws:secretsmanager:{env_region}:{env_account}:secret:data-science-and-ml-models/openai-Sc0RKh" if env_name == 'dev' else f"arn:aws:secretsmanager:{env_region}:{env_account}:secret:data-science-and-ml-models/openai-8d8fB2"

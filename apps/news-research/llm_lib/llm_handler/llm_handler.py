@@ -70,6 +70,16 @@ class ClaudeProcessor:
         
         # Using the DOTALL flag to match across multiple lines
         cleaned_text = re.sub(pattern, '', text, flags=re.DOTALL)
+
+        no_access_pattern = r"I do not actually have access to any raw text"
+        if re.search(no_access_pattern, text):
+            logger.error(f"Refused to process raw_text: {text}")
+            raise ValueError("Invalid response: can not find raw_text in the prompt.")
+        
+        helpful_bot_pattern = r"I am an AI assistant created by Anthropic to be helpful, harmless, and honest"
+        if re.search(helpful_bot_pattern, text):
+            logger.error(f"Refused to process raw_text: {text}")
+            raise ValueError("Invalid response: can not find raw_text in the prompt.")
         
         return cleaned_text
 

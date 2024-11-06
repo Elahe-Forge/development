@@ -6,13 +6,15 @@
         "account": "597915789054",
         "region": "us-west-2",
         "file_assets_bucket_name": "data-science-news-cdk-dev",
-        "team": "orange"
+        "team": "orange",
+        "fdms-user": "arn:aws:iam::597915789054:user/fg-acceptance-issuersapp"
       },
       "prod": {
         "account": "423254227923",
         "region": "us-west-2",
         "file_assets_bucket_name": "data-science-news-cdk",
-        "team": "orange"
+        "team": "orange",
+        "fdms-user": "arn:aws:iam::423254227923:user/fg-prod-issuersapp"
       }
     }
   }

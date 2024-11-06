@@ -26,7 +26,7 @@ s3_client = boto3.client('s3')
 lambda_client = boto3.client('lambda')
 
 
-def process_records(records, llm_processor, model_name, model_version, s3_news_output_bucket):
+def process_records(records, llm_processor, model_name, model_version, s3_news_output_bucket, prompt_version):
     """ Process each news record and persist results. """
     
     metrics = ["reliability", "sentiment", "relevance", "controversy", "tags"]
@@ -46,7 +46,7 @@ def process_records(records, llm_processor, model_name, model_version, s3_news_o
                     results[metric] = None
             
             news_record.update(results)
-            news_record.update({'model_name': model_name, 'model_version': model_version, 'raw': raw_news_text})
+            news_record.update({'model_name': model_name, 'model_version': model_version, 'raw': raw_news_text, 'prompt_version': prompt_version})
             
 
         except Exception as e:
@@ -174,7 +174,7 @@ def handler(event, context):
         logger.info(f"Record: '{record}'")
         message_body = json.loads(record['body'])
         
-        process_records(message_body['news_items'], llm_processor, model_name, model_version, s3_news_output_bucket)
+        process_records(message_body['news_items'], llm_processor, model_name, model_version, s3_news_output_bucket, prompt_version)
         
 
     return {'status': 'Processing complete'}

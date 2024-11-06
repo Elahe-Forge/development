@@ -15,6 +15,7 @@ account = env_context["account"]
 region = env_context["region"]
 bucket_name = env_context["file_assets_bucket_name"]
 team = env_context["team"]
+fdms_user = env_context["fdms-user"]
 
 env = Environment(account=account, region=region)
 role_arn = f"arn:aws:iam::{account}:role/data-science-news-cdk"
@@ -32,6 +33,7 @@ my_stack = NewsResearchStack(app, f"data-science-news-automation-{env_name}",
                     env_account = account,
                     env_region = region,
                     env=env,
+                    fdms_user=fdms_user,
                     synthesizer=synthesizer
 )
 Tags.of(my_stack).add("team", team)

@@ -81,9 +81,17 @@ class S1FilingsStack(Stack):
                                        versioned=True,
                                        removal_policy=RemovalPolicy.RETAIN)  # Retain bucket on stack deletion
 
-        db_cluster_arn = f"arn:aws:rds:{env_region}:{env_account}:cluster:fdp-nonprod-rds" if env_name == 'dev' else ""
-        database_name = "data_science" if env_name == 'dev' else ""
-        secret_arn = f"arn:aws:secretsmanager:{env_region}:{env_account}:secret:rds-db-credentials/cluster-EORVXESC7R25OPQE3ROIVJBXY4/fdp/1703610716839-NA5P7z" if env_name == 'dev' else ""
+        
+        snowflake_credentials_nonprod = {
+            "account":"FORGEGLOBAL_NONPROD",
+            "private_key_passphrase":None,
+            "warehouse":"COMPUTE_WH",
+            "database":"source",
+            "db_schema":"s1_fillings",
+            "table_name":"data_ops_fields_extraction"
+        }
+        snowflake_credentials = snowflake_credentials_nonprod if env_name == 'dev' else None
+        secret_arn = f"arn:aws:secretsmanager:{env_region}:{env_account}:secret:nonprod-ds-secrets-5MfieR" if env_name == 'dev' else ""
 
         s1_extractor_ecr_image = aws_lambda.EcrImageCode.from_asset_image(
                 directory = os.path.join(os.getcwd(), "lambda/s1_extractor"),
@@ -99,9 +107,9 @@ class S1FilingsStack(Stack):
           environment   = {
                 'S1_FILINGS_HTML_BUCKET': s1_html_bucket.bucket_name,
                 'S3_S1_OUTPUT_BUCKET': s1_output_bucket.bucket_name,
-                'DB_CLUSTER_ARN': db_cluster_arn,
-                'DATABASE_NAME': database_name,
-                'SECRET_ARN': secret_arn
+                'SNOWFLAKE_CREDENTIALS': snowflake_credentials,
+                'SECRET_ARN': secret_arn,
+                'REGION_NAME': env_region
           },
           function_name = f"S1ExtractorFunction-{env_name}",
           memory_size   = 1024, 
@@ -119,15 +127,7 @@ class S1FilingsStack(Stack):
         s1_queue_event_source = lambda_event_source.SqsEventSource(s1_queue) 
         s1_extractor_lambda.add_event_source(s1_queue_event_source)
 
-        # Grant access to RDS for lambda
-        rds_policy_statement = aws_iam.PolicyStatement(
-            effect=aws_iam.Effect.ALLOW,
-            actions=[ "rds-data:ExecuteStatement", "rds-data:BatchExecuteStatement"],
-            resources=[db_cluster_arn]
-        )
-        s1_extractor_lambda.add_to_role_policy(rds_policy_statement)
-        
-        # Grant read access to the secret manager for lambda
+        # Add permissions to the Lambda function to access the secret manager for snowflake credentials
         secrets_policy_statement = aws_iam.PolicyStatement(
             effect=aws_iam.Effect.ALLOW,
             actions=[ "secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"],

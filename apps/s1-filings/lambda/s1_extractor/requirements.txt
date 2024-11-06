@@ -1,3 +1,6 @@
 pandas
 pyarrow
 lxml
+snowflake
+snowflake-sqlalchemy
+snowflake-connector-python

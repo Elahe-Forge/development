@@ -2,7 +2,7 @@
 
 from aws_cdk import App, Tags, Environment, DefaultStackSynthesizer
 
-from s1_filings.s1_filings_stack import S1FilingsStack
+from infra.main import S1FilingsStack
 
 
 app = App()

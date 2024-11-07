@@ -14,6 +14,8 @@ from io import BytesIO
 from botocore.exceptions import ClientError
 import json
 
+OUTPUT_PREFIX = 'raw'
+
 s3 = boto3.client('s3')
 
 # Initialize logger
@@ -22,12 +24,12 @@ logger.setLevel(logging.INFO)
 
 
 def fetch_s1_rss(headers):
-    rss_url = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=S-1&output=atom" 
-    
+    rss_url = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=S-1&output=atom"
+
     try:
         with requests.get(rss_url, headers=headers) as response:
             response.raise_for_status()
-   
+
         feed = feedparser.parse(response.content)
         s1_filings = []
         """
@@ -45,9 +47,9 @@ def fetch_s1_rss(headers):
         """
         for entry in feed.entries:
             form_type = entry.get('tags')[0].get('term')
-                
+
             if form_type == 'S-1' or form_type == 'S-1/A':
-                accession_number, cik, company_name = fetch_accession_cik_company_name(entry)       
+                accession_number, cik, company_name = fetch_accession_cik_company_name(entry)
                 s1_filings.append({
                     'company_name': company_name,
                     'cik': cik,
@@ -56,7 +58,7 @@ def fetch_s1_rss(headers):
                     'published_datetime': entry.updated,
                     'form_type': form_type
                 })
-        
+
         return s1_filings
 
     except Exception as e:
@@ -64,8 +66,8 @@ def fetch_s1_rss(headers):
         return []
 
 
-def fetch_accession_cik_company_name(entry):   
-    
+def fetch_accession_cik_company_name(entry):
+
     try:
         accession_number = None
         cik = None
@@ -103,11 +105,11 @@ def fetch_accession_cik_company_name(entry):
     except Exception as e:
         logger.error(f"Failed to fetch accession number and/or CIK: {e}")
         return None, None, None
-            
+
 
 def fetch_s1_primary_document(headers, cik, accession_number):
         url = f"https://data.sec.gov/submissions/CIK{cik}.json"
-               
+
         try:
             response = requests.get(url, headers=headers)
             with requests.get(url, headers=headers) as response:
@@ -121,7 +123,7 @@ def fetch_s1_primary_document(headers, cik, accession_number):
             logger.info(f"Primary Document: {primary_document}")
 
             return primary_document
-                     
+
         except requests.exceptions.JSONDecodeError:
             logger.error("Failed to decode JSON response")
             return []
@@ -140,7 +142,7 @@ def file_exists(bucket, key):
 def dl_s1_filings(headers, s1_filings_bucket, each_s1):
     """ 
     Download and persist S1 filings in S3 as HTML
-    """  
+    """
     try:
         primary_document = fetch_s1_primary_document(headers, each_s1['cik'], each_s1['accession_number'])
         url = f"https://www.sec.gov/Archives/edgar/data/{each_s1['cik']}/{each_s1['accession_number'].replace('-', '')}/{primary_document}"
@@ -148,13 +150,13 @@ def dl_s1_filings(headers, s1_filings_bucket, each_s1):
         with requests.get(url, headers=headers, stream=True) as response:
             response.raise_for_status()
             html_content = response.text
-        
+
         sanitized_form_type = each_s1['form_type'].replace('/', '')
-        s3_file_path = f"{each_s1['company_name']}_{each_s1['cik']}/{sanitized_form_type}_{each_s1['published_datetime']}.html"
+        s3_file_path = f"{OUTPUT_PREFIX}/{each_s1['company_name']}_{each_s1['cik']}/{sanitized_form_type}_{each_s1['published_datetime']}.html"
         if not file_exists(s1_filings_bucket, s3_file_path):
             s3.upload_fileobj(BytesIO(html_content.encode('utf-8')), s1_filings_bucket, s3_file_path)
             logger.info(f"The HTML document has been uploaded to S3 bucket {s1_filings_bucket} as {s3_file_path}.")
-            
+
             # Confirm the file has been uploaded successfully
             if file_exists(s1_filings_bucket, s3_file_path):
                 logger.info(f"Confirmed that {s3_file_path} exists in S3.")
@@ -162,8 +164,8 @@ def dl_s1_filings(headers, s1_filings_bucket, each_s1):
             else:
                 logger.error(f"Failed to confirm the upload of {s3_file_path} to S3.")
                 return None
-                
-        
+
+
         else:
             logger.info(f"File {s3_file_path} already exists, skipping upload.")
             return None
@@ -186,16 +188,16 @@ def send_to_sqs(queue_url, message_body):
         raise e
 
 def handler(event, context):
-    s1_filings_bucket = os.environ['S1_FILINGS_HTML_BUCKET']
+    s1_filings_bucket = os.environ['S1_FILINGS_BUCKET']
     queue_url = os.environ['S1_QUEUE_URL']
     headers = {'User-Agent': 'Your Name or Company Name, your-email@example.com'}
     s1_filings = fetch_s1_rss(headers)
-    
+
     logger.info(f"s1_filings: {s1_filings}")
 
     try:
-        for each_s1 in s1_filings:      
-        
+        for each_s1 in s1_filings:
+
             s3_file_path = dl_s1_filings(headers, s1_filings_bucket, each_s1)
 
             # If files were successfully saved
@@ -220,10 +222,10 @@ def handler(event, context):
         'body': json.dumps(f"Successfully processed and sent message to SQS.")
     }
 
-    
 
 
-        
+
+
 
 
 

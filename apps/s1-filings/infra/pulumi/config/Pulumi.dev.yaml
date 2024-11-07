@@ -1,0 +1,9 @@
+encryptionsalt: v1:lRBuB+4cR68=:v1:/IhNWyCAPvGYebqC:xEzfVhG4Sbt292QsY350nh+2akRQ4A==
+config:
+  aws:region: us-west-2
+  s1-filings:env: dev
+  s1-filings:file_assets_bucket_name: data-science-s1-filings-dev
+  s1-filings:db_cluster_arn: arn:aws:rds:us-west-2:597915789054:cluster:fdp-nonprod-rds
+  s1-filings:database_name: data_science
+  s1-filings:secret_arn: arn:aws:secretsmanager:us-west-2:597915789054:secret:rds-db-credentials/cluster-EORVXESC7R25OPQE3ROIVJBXY4/fdp/1703610716839-NA5P7z
+  s1-filings:team: orange

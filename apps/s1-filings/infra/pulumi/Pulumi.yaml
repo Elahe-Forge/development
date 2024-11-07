@@ -1,0 +1,7 @@
+name: s1-filings
+runtime:
+  name: python
+  options:
+    toolchain: pip
+stackConfigDir: ./config
+description: Infra for S1 Filings project

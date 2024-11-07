@@ -1,0 +1,16 @@
+FROM public.ecr.aws/lambda/python:3.12
+
+# Copy the necessary directories and files to the image
+COPY connectors ${LAMBDA_TASK_ROOT}/connectors
+COPY apps/s1-filings ${LAMBDA_TASK_ROOT}/s1-filings
+COPY requirements.txt ${LAMBDA_TASK_ROOT}/requirements.txt
+
+# Install packages from the main requirements.txt
+RUN pip install --upgrade pip
+RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r ${LAMBDA_TASK_ROOT}/requirements.txt
+
+# Install packages from the s1-filings requirements.txt
+WORKDIR ${LAMBDA_TASK_ROOT}/s1-filings
+RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
+
+CMD []

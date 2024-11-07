@@ -6,30 +6,30 @@ with open("README.md") as fp:
 
 
 setuptools.setup(
-    name="news-research",
+    name="s1-filings",
     version="0.0.1",
 
-    description="Automated news research app",
+    description="S1 Filings Extraction",
     long_description=long_description,
     long_description_content_type="text/markdown",
 
     author="team-orange",
 
-    package_dir={"": "news-research"},
-    packages=setuptools.find_packages(where="news-research"),
+    # package_dir={"": ""},
+    packages=setuptools.find_packages(where=""),
+    #
+    # install_requires=[
+    #     "aws-cdk.core",
+    #     "aws-cdk.aws_lambda",
+    #     "aws-cdk.aws_dynamodb",
+    #     "boto3",
+    #     "botocore",
+    #     "aws-cdk.aws_events",
+    #     "aws-cdk.aws_lambda_event_sources",
+    #     "aws-cdk.aws_events_targets"
+    # ],
 
-    install_requires=[
-        "aws-cdk.core",
-        "aws-cdk.aws_lambda",
-        "aws-cdk.aws_dynamodb",
-        "boto3",
-        "botocore",
-        "aws-cdk.aws_events",
-        "aws-cdk.aws_lambda_event_sources",
-        "aws-cdk.aws_events_targets"
-    ],
-
-    python_requires=">=3.6",
+    python_requires=">=3.9",
 
     classifiers=[
         "Development Status :: 4 - Beta",

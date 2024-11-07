@@ -2,16 +2,14 @@ import json
 import os
 
 import boto3
-from dotenv import load_dotenv
-
 import helpers.transformers as transformers
 import helpers.utils as utils
+from dotenv import load_dotenv
 
 load_dotenv()
 
 
 def handler(event, context):
-
     ses_client = boto3.client("ses")
 
     bucket = event["Records"][0]["s3"]["bucket"]["name"]
@@ -28,7 +26,6 @@ def handler(event, context):
         precise_df, preferred_shares_list = transformers.generate_precise_df(
             bucket, json_data
         )
-        print(preferred_shares_list)
         print("Precise DataFrame generated")
 
         raw_df = transformers.generate_support_df(
@@ -49,8 +46,11 @@ def handler(event, context):
     except Exception as e:
         print(f"Error process transform: {e}")
 
-        SENDER_EMAIL = os.getenv("SENDER_EMAIL")
-        TO_RECIPIENTS_EMAIL = os.getenv("TO_RECIPIENTS_EMAIL")
+        SENDER_EMAIL = os.getenv("SENDER_EMAIL_ERROR")
+        TO_RECIPIENTS_EMAIL = os.getenv("TO_RECIPIENTS_EMAIL_ERROR")
+
+        print("SENDER_EMAIL:", SENDER_EMAIL)
+        print("TO_RECIPIENTS_EMAIL:", TO_RECIPIENTS_EMAIL)
 
         subject = f"Data Transform Excel Error - {filename}"
         body = f"Error: {e}"
@@ -84,7 +84,7 @@ if __name__ == "__main__":
                         "name": "coi-reader-dev-coireaderdeve59305f7-bdrj9eeywtdz"
                     },
                     "object": {
-                        "key": "outputs/config_json/6k 2024-07-19 COI/gpt-4o/config.json"
+                        "key": "outputs/config_json/septerna 2024-10-28 COI/gpt-4o/config.json"
                     },
                 }
             }

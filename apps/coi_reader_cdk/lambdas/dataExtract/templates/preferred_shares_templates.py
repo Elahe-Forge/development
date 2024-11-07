@@ -7,7 +7,7 @@ You are a helpful assistant. Please extract the following details listed below f
 </document>
 
 <details>
-1. preferred_share_names: Names of each type of Preferred Share. For example, ['Series A', 'Series B', 'Series B-1', 'Series 1']
+1. preferred_share_names: Names of each type of Preferred Share. For example, ['Series A', 'Series B', 'Series B-1', 'Series 1']. If undesignated preferred stock, then return "Preferred Stock - Undesignated". 
 2. preferred_share_names_supporting_text: Quote the specific text used to extract the preferred_share_names.
 </details>
 

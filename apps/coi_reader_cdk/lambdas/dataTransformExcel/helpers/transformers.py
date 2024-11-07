@@ -1,15 +1,12 @@
-# import collections
-# import json
 import re
 from io import BytesIO
 
 import boto3
+import helpers.utils as utils
 import pandas as pd
+from helpers.fields import other_fields, precise_fields, raw_fields
 from openpyxl import load_workbook
 from openpyxl.comments import Comment
-
-import helpers.utils as utils
-from helpers.fields import other_fields, precise_fields, raw_fields
 
 
 def generate_precise_df(bucket, json_data):
@@ -180,8 +177,11 @@ def convert_pandas_to_excel(bucket, df, dfs, output_dict, json_data):
             if col_idx in [3, 4]:
                 adj_col_idx += 1  # adjusting to account for computed cells without comments ($_invested, conversion_ratio)
             comment_text = dfs.iloc[row_idx, col_idx]  # Get comment text
-            len_comment_text = len(comment_text)  # Calculate comment length
 
+            if comment_text == None:
+                comment_text = "None found"
+
+            len_comment_text = len(comment_text)  # Calculate comment length
             comment = Comment(text=comment_text, author=author)  # Create a comment
             # Adjust comment box dimensions based on text length
             comment.width = max(400, len_comment_text / 4)
@@ -219,7 +219,11 @@ def convert_pandas_to_excel(bucket, df, dfs, output_dict, json_data):
         ws[f"A{count}"] = k  # Add field name to column A
         ws[f"B{count}"] = v["data_extract"]  # Add extracted data to column B
         comment_text = v["supporting_text"]  # Get the supporting text comment
+
+        if comment_text == None:
+            comment_text = "None found"
         len_comment_text = len(comment_text)  # Calculate comment length
+
         # Attach comments to the cells in column B
         ws[f"B{count}"].comment = Comment(
             comment_text,
